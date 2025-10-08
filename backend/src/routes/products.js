@@ -55,7 +55,12 @@ router.get('/', fixImageUrls, async (req, res) => {
       sortOrder = 'desc'
     } = req.query;
 
-    const query = { isAvailable: true, isApproved: true };
+    const query = { 
+      $or: [
+        { isApproved: true },
+        { status: 'approved' }
+      ]
+    };
 
     // Category filter
     if (category) query.category = category;
@@ -110,8 +115,10 @@ router.get('/featured', async (req, res) => {
   try {
     const products = await Product.find({
       isFeatured: true,
-      isAvailable: true,
-      isApproved: true
+      $or: [
+        { isApproved: true },
+        { status: 'approved' }
+      ]
     })
       .populate('seller', 'name phone location sellerInfo profileImage')
       .sort({ createdAt: -1 })
@@ -121,6 +128,69 @@ router.get('/featured', async (req, res) => {
   } catch (error) {
     console.error('Get featured products error:', error);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/products/search
+// @desc    Search products
+// @access  Public
+router.get('/search', fixImageUrls, async (req, res) => {
+  try {
+    const {
+      query: searchQuery,
+      category,
+      location,
+      minPrice,
+      maxPrice,
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+
+    const query = { 
+      $or: [
+        { isApproved: true },
+        { status: 'approved' }
+      ]
+    };
+
+    // Search filter
+    if (searchQuery) {
+      query.$and = query.$and || [];
+      query.$and.push({
+        $or: [
+          { title: { $regex: searchQuery, $options: 'i' } },
+          { description: { $regex: searchQuery, $options: 'i' } }
+        ]
+      });
+    }
+
+    // Category filter
+    if (category) query.category = category;
+
+    // Location filter
+    if (location && location !== 'all') {
+      query['location.city'] = new RegExp(location, 'i');
+    }
+
+    // Price range filter
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = parseFloat(minPrice);
+      if (maxPrice) query.price.$lte = parseFloat(maxPrice);
+    }
+
+    const sortOptions = {};
+    sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+
+    const products = await Product.find(query)
+      .populate('seller', 'name phone location sellerInfo profileImage')
+      .sort(sortOptions)
+      .limit(100);
+
+    res.json({ products, total: products.length });
+  } catch (error) {
+    console.error('Search products error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 

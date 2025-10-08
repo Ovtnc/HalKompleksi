@@ -272,4 +272,29 @@ router.delete('/products/:id', [auth, adminOnly], async (req, res) => {
   }
 });
 
+// @route   PUT /api/admin/products/:id/featured
+// @desc    Toggle featured status of a product
+// @access  Private (Admin only)
+router.put('/products/:id/featured', [auth, adminOnly], async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    // Toggle featured status
+    product.isFeatured = !product.isFeatured;
+    await product.save();
+
+    res.json({
+      message: `Product ${product.isFeatured ? 'marked as featured' : 'unmarked as featured'}`,
+      isFeatured: product.isFeatured
+    });
+  } catch (error) {
+    console.error('Toggle featured error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

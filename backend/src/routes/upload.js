@@ -49,6 +49,7 @@ router.post('/images', auth, upload.array('images', 10), (req, res) => {
     const imageUrls = req.files.map(file => ({
       url: `${req.protocol}://${req.get('host')}/uploads/${file.filename}`,
       filename: file.filename,
+      type: file.mimetype.startsWith('video/') ? 'video' : 'image',
       isPrimary: false
     }));
 
@@ -58,13 +59,46 @@ router.post('/images', auth, upload.array('images', 10), (req, res) => {
     }
 
     res.json({
-      message: 'Resimler başarıyla yüklendi',
+      message: 'Dosyalar başarıyla yüklendi',
       images: imageUrls
     });
   } catch (error) {
     console.error('Upload error:', error);
     res.status(500).json({
-      message: 'Resimler yüklenirken hata oluştu',
+      message: 'Dosyalar yüklenirken hata oluştu',
+      error: error.message
+    });
+  }
+});
+
+// @route   POST /api/upload/media
+// @desc    Upload single media file (image or video)
+// @access  Private
+router.post('/media', auth, upload.single('media'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        message: 'Medya dosyası bulunamadı'
+      });
+    }
+
+    // Dosya tipini belirle
+    const fileType = req.file.mimetype.startsWith('video/') ? 'video' : 'image';
+    
+    // Dosya URL'sini oluştur
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+
+    res.json({
+      message: 'Medya başarıyla yüklendi',
+      url: fileUrl,
+      filename: req.file.filename,
+      type: fileType,
+      size: req.file.size
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({
+      message: 'Medya yüklenirken hata oluştu',
       error: error.message
     });
   }

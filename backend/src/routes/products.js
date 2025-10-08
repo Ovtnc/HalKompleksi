@@ -147,45 +147,56 @@ router.get('/search', fixImageUrls, async (req, res) => {
     } = req.query;
 
     const query = { 
-      $or: [
-        { isApproved: true },
-        { status: 'approved' }
+      $and: [
+        {
+          $or: [
+            { isApproved: true },
+            { status: 'approved' }
+          ]
+        }
       ]
     };
 
-    // Search filter
+    // Search filter - prioritize title search
     if (searchQuery) {
-      query.$and = query.$and || [];
       query.$and.push({
         $or: [
           { title: { $regex: searchQuery, $options: 'i' } },
           { description: { $regex: searchQuery, $options: 'i' } }
         ]
       });
+      console.log('🔍 Search query:', searchQuery);
     }
 
     // Category filter
-    if (category) query.category = category;
+    if (category && category !== 'all') {
+      query.$and.push({ category: category });
+    }
 
     // Location filter
     if (location && location !== 'all') {
-      query['location.city'] = new RegExp(location, 'i');
+      query.$and.push({ 'location.city': new RegExp(location, 'i') });
     }
 
     // Price range filter
     if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) query.price.$gte = parseFloat(minPrice);
-      if (maxPrice) query.price.$lte = parseFloat(maxPrice);
+      const priceQuery = {};
+      if (minPrice) priceQuery.$gte = parseFloat(minPrice);
+      if (maxPrice) priceQuery.$lte = parseFloat(maxPrice);
+      query.$and.push({ price: priceQuery });
     }
 
     const sortOptions = {};
     sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
+    console.log('🔍 Final search query:', JSON.stringify(query, null, 2));
+
     const products = await Product.find(query)
       .populate('seller', 'name phone location sellerInfo profileImage')
       .sort(sortOptions)
       .limit(100);
+
+    console.log('📊 Found products:', products.length);
 
     res.json({ products, total: products.length });
   } catch (error) {
@@ -366,7 +377,8 @@ router.put('/:id', [
   authorize('seller'),
   body('title').optional().trim().isLength({ min: 3, max: 100 }).withMessage('Title must be 3-100 characters'),
   body('description').optional().trim().isLength({ min: 10, max: 1000 }).withMessage('Description must be 10-1000 characters'),
-  body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number')
+  body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+  body('isAvailable').optional().isBoolean().withMessage('isAvailable must be a boolean')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -480,10 +492,16 @@ router.get('/seller/my-products', [auth, authorize('seller')], async (req, res) 
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
+    // Add favorites count to each product
+    const productsWithFavoritesCount = products.map(product => ({
+      ...product.toObject(),
+      favoritesCount: product.favorites ? product.favorites.length : 0
+    }));
+
     const total = await Product.countDocuments(query);
 
     res.json({
-      products,
+      products: productsWithFavoritesCount,
       totalPages: Math.ceil(total / limit),
       currentPage: parseInt(page),
       total

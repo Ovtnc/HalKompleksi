@@ -2,8 +2,68 @@ const express = require('express');
 const upload = require('../middleware/upload');
 const { auth } = require('../middleware/auth');
 const path = require('path');
+const multer = require('multer');
+const fs = require('fs');
+
+// Profil resimleri için ayrı storage
+const profileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadPath = 'public/uploads/profiles';
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'profile-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const profileUpload = multer({
+  storage: profileStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Sadece resim dosyaları yüklenebilir'), false);
+    }
+  }
+});
 
 const router = express.Router();
+
+// @route   POST /api/upload/profile-image
+// @desc    Upload profile image
+// @access  Private
+router.post('/profile-image', auth, profileUpload.single('profileImage'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        message: 'Profil resmi dosyası bulunamadı'
+      });
+    }
+
+    // Dosya URL'sini oluştur
+    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/profiles/${req.file.filename}`;
+
+    res.json({
+      message: 'Profil resmi başarıyla yüklendi',
+      url: imageUrl,
+      imageUrl: imageUrl,
+      filename: req.file.filename
+    });
+  } catch (error) {
+    console.error('Profile image upload error:', error);
+    res.status(500).json({
+      message: 'Profil resmi yüklenirken hata oluştu',
+      error: error.message
+    });
+  }
+});
 
 // @route   POST /api/upload/image
 // @desc    Upload single image

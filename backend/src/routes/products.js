@@ -3,6 +3,8 @@ const { body, validationResult } = require('express-validator');
 const Product = require('../models/Product');
 const User = require('../models/User');
 const { auth, authorize } = require('../middleware/auth');
+const fs = require('fs');
+const path = require('path');
 
 const router = express.Router();
 
@@ -212,14 +214,14 @@ router.get('/categories', (req, res) => {
   const categories = [
     { id: 'meyve', name: 'Meyve', icon: 'nutrition' },
     { id: 'sebze', name: 'Sebze', icon: 'leaf' },
+    { id: 'gida', name: 'Gıda', icon: 'restaurant' },
     { id: 'nakliye', name: 'Nakliye', icon: 'car' },
     { id: 'kasa', name: 'Kasa', icon: 'cube' },
     { id: 'zirai_ilac', name: 'Zirai İlaç', icon: 'medical' },
     { id: 'ambalaj', name: 'Ambalaj', icon: 'archive' },
     { id: 'indir_bindir', name: 'İndir-Bindir', icon: 'people' },
     { id: 'emlak', name: 'Emlak', icon: 'home' },
-    { id: 'arac', name: 'Araç', icon: 'car-sport' },
-    { id: 'bakliyat', name: 'Bakliyat', icon: 'leaf' }
+    { id: 'arac', name: 'Araç', icon: 'car-sport' }
   ];
 
   res.json({ categories });
@@ -303,6 +305,24 @@ router.get('/:id', fixImageUrls, async (req, res) => {
     // Increment view count
     await product.incrementViews();
 
+    // Refresh seller info to get latest profile image
+    if (product.seller) {
+      console.log('Product seller info:', product.seller);
+      console.log('Seller _id:', product.seller._id);
+      console.log('Seller ID type:', typeof product.seller._id);
+      
+      const sellerId = product.seller._id || product.seller;
+      console.log('Using seller ID:', sellerId);
+      
+      const updatedSeller = await User.findById(sellerId, 'name phone location sellerInfo profileImage');
+      if (updatedSeller) {
+        console.log('Updated seller info:', updatedSeller);
+        product.seller = updatedSeller;
+      } else {
+        console.log('No updated seller found for ID:', sellerId);
+      }
+    }
+
     res.json({ product });
   } catch (error) {
     console.error('Get product error:', error);
@@ -319,7 +339,7 @@ router.post('/', [
   body('title').trim().isLength({ min: 3, max: 100 }).withMessage('Title must be 3-100 characters'),
   body('description').trim().isLength({ min: 10, max: 1000 }).withMessage('Description must be 10-1000 characters'),
   body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
-  body('category').isIn(['meyve', 'sebze', 'nakliye', 'kasa', 'zirai_ilac', 'ambalaj', 'indir_bindir', 'emlak', 'arac', 'et', 'sut', 'bakliyat', 'baharat', 'diger']).withMessage('Invalid category'),
+  body('category').isIn(['meyve', 'sebze', 'nakliye', 'kasa', 'zirai_ilac', 'ambalaj', 'indir_bindir', 'emlak', 'arac', 'gida', 'baharat', 'diger']).withMessage('Invalid category'),
   body('location.city').trim().isLength({ min: 2 }).withMessage('City is required'),
   body('images').optional().isArray().withMessage('Images must be an array')
 ], async (req, res) => {
@@ -508,6 +528,62 @@ router.get('/seller/my-products', [auth, authorize('seller')], async (req, res) 
     });
   } catch (error) {
     console.error('Get seller products error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/products/:id
+// @desc    Delete product (Seller or Admin only)
+// @access  Private
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    // Check if user is the seller or an admin
+    if (product.seller.toString() !== req.user._id.toString() && req.user.userType !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to delete this product' });
+    }
+
+    // Delete associated images from filesystem
+    let deletedImagesCount = 0;
+    if (product.images && product.images.length > 0) {
+      for (const image of product.images) {
+        try {
+          const imageUrl = image.url || image;
+          
+          // Extract filename from URL
+          if (imageUrl && imageUrl.includes('/uploads/')) {
+            const filename = imageUrl.split('/uploads/').pop();
+            const filePath = path.join(__dirname, '../../public/uploads', filename);
+            
+            // Check if file exists and delete
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+              deletedImagesCount++;
+              console.log(`Deleted image: ${filename}`);
+            }
+          }
+        } catch (imgError) {
+          console.error('Error deleting image:', imgError);
+        }
+      }
+    }
+
+    // Delete product from database
+    await Product.findByIdAndDelete(req.params.id);
+
+    console.log(`Product deleted: ${product.title}, Images deleted: ${deletedImagesCount}, By: ${req.user.userType}`);
+
+    res.json({
+      message: 'Product and images deleted successfully',
+      deletedImages: deletedImagesCount
+    });
+  } catch (error) {
+    console.error('Delete product error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

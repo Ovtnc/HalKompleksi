@@ -2,6 +2,8 @@ const express = require('express');
 const { auth, adminOnly } = require('../middleware/auth');
 const Product = require('../models/Product');
 const User = require('../models/User');
+const fs = require('fs');
+const path = require('path');
 const router = express.Router();
 
 // @route   GET /api/admin/dashboard
@@ -15,6 +17,12 @@ router.get('/dashboard', [auth, adminOnly], async (req, res) => {
     const approvedProducts = await Product.countDocuments({ isApproved: true });
     const activeUsers = await User.countDocuments({ isActive: true });
     const blockedUsers = await User.countDocuments({ isActive: false });
+    const featuredProducts = await Product.countDocuments({ isFeatured: true });
+    
+    // Calculate total views and favorites
+    const allProducts = await Product.find().select('views favorites');
+    const totalViews = allProducts.reduce((sum, product) => sum + (product.views || 0), 0);
+    const totalFavorites = allProducts.reduce((sum, product) => sum + (product.favorites?.length || 0), 0);
 
     // Recent activity
     const recentProducts = await Product.find()
@@ -34,7 +42,10 @@ router.get('/dashboard', [auth, adminOnly], async (req, res) => {
         pendingProducts,
         approvedProducts,
         activeUsers,
-        blockedUsers
+        blockedUsers,
+        featuredProducts,
+        totalViews,
+        totalFavorites
       },
       recentProducts,
       recentUsers
@@ -104,7 +115,7 @@ router.put('/products/:id/approve', [auth, adminOnly], async (req, res) => {
 });
 
 // @route   PUT /api/admin/products/:id/reject
-// @desc    Reject a product
+// @desc    Reject a product (remove approval status)
 // @access  Private (Admin only)
 router.put('/products/:id/reject', [auth, adminOnly], async (req, res) => {
   try {
@@ -116,11 +127,16 @@ router.put('/products/:id/reject', [auth, adminOnly], async (req, res) => {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    // Delete the product or mark as rejected
-    await Product.findByIdAndDelete(req.params.id);
+    // Remove approval and featured status
+    product.isApproved = false;
+    product.isFeatured = false; // Onaysız ürün öne çıkamaz
+    product.rejectionReason = reason || 'Admin tarafından onay kaldırıldı';
+    product.rejectedAt = new Date();
+    
+    await product.save();
 
     res.json({
-      message: 'Product rejected and removed',
+      message: 'Product approval removed',
       reason: reason || 'No reason provided'
     });
   } catch (error) {
@@ -251,7 +267,7 @@ router.get('/products', [auth, adminOnly], async (req, res) => {
 });
 
 // @route   DELETE /api/admin/products/:id
-// @desc    Delete product (Admin only)
+// @desc    Delete product and its images (Admin only)
 // @access  Private (Admin only)
 router.delete('/products/:id', [auth, adminOnly], async (req, res) => {
   try {
@@ -261,10 +277,41 @@ router.delete('/products/:id', [auth, adminOnly], async (req, res) => {
       return res.status(404).json({ message: 'Product not found' });
     }
 
+    // Delete associated images from filesystem
+    let deletedImagesCount = 0;
+    if (product.images && product.images.length > 0) {
+      for (const image of product.images) {
+        try {
+          const imageUrl = image.url || image;
+          
+          // Extract filename from URL
+          // URL format: http://192.168.0.27:5001/uploads/media-1234567890.jpg
+          if (imageUrl && imageUrl.includes('/uploads/')) {
+            const filename = imageUrl.split('/uploads/').pop();
+            const filePath = path.join(__dirname, '../../public/uploads', filename);
+            
+            // Check if file exists and delete
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+              deletedImagesCount++;
+              console.log(`Deleted image: ${filename}`);
+            }
+          }
+        } catch (imgError) {
+          console.error('Error deleting image:', imgError);
+          // Continue with next image even if one fails
+        }
+      }
+    }
+
+    // Delete product from database
     await Product.findByIdAndDelete(req.params.id);
 
+    console.log(`Product deleted: ${product.title}, Images deleted: ${deletedImagesCount}`);
+
     res.json({
-      message: 'Product deleted successfully'
+      message: 'Product and images deleted successfully',
+      deletedImages: deletedImagesCount
     });
   } catch (error) {
     console.error('Delete product error:', error);
@@ -293,6 +340,93 @@ router.put('/products/:id/featured', [auth, adminOnly], async (req, res) => {
     });
   } catch (error) {
     console.error('Toggle featured error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/admin/products/featured
+// @desc    Get all featured products
+// @access  Private (Admin only)
+router.get('/products/featured', [auth, adminOnly], async (req, res) => {
+  try {
+    const products = await Product.find({ isFeatured: true })
+      .populate('seller', 'name email phone profileImage')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      products
+    });
+  } catch (error) {
+    console.error('Get featured products error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/admin/users/search
+// @desc    Search users by name, email, or phone
+// @access  Private (Admin only)
+router.get('/users/search', [auth, adminOnly], async (req, res) => {
+  try {
+    const { q } = req.query;
+    
+    if (!q || q.trim().length < 2) {
+      return res.json({ users: [] });
+    }
+
+    const searchRegex = new RegExp(q, 'i');
+    
+    const users = await User.find({
+      $or: [
+        { name: searchRegex },
+        { email: searchRegex },
+        { phone: searchRegex }
+      ]
+    })
+      .select('name email phone userType isActive createdAt')
+      .sort({ createdAt: -1 })
+      .limit(20);
+
+    res.json({
+      users
+    });
+  } catch (error) {
+    console.error('Search users error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/admin/users/:userId/products
+// @desc    Get all products for a specific user
+// @access  Private (Admin only)
+router.get('/users/:userId/products', [auth, adminOnly], async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const products = await Product.find({ seller: userId })
+      .populate('seller', 'name email phone profileImage')
+      .sort({ createdAt: -1 })
+      .lean(); // Convert to plain objects for easier manipulation
+    
+    // Transform media array to ensure backward compatibility
+    const transformedProducts = products.map(product => {
+      // Ensure media array has correct format
+      if (product.images && product.images.length > 0) {
+        product.media = product.images.map(img => ({
+          url: img.url || img,
+          type: img.type || 'image',
+          isPrimary: img.isPrimary || false
+        }));
+      } else {
+        product.media = [];
+      }
+      return product;
+    });
+
+    res.json({
+      products: transformedProducts
+    });
+  } catch (error) {
+    console.error('Get user products error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

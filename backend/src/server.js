@@ -55,6 +55,14 @@ app.use('/uploads', (req, res, next) => {
   next();
 }, express.static('public/uploads'));
 
+// Static dosya servisi - profil resimleri için
+app.use('/uploads/profiles', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+}, express.static('public/uploads/profiles'));
+
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));

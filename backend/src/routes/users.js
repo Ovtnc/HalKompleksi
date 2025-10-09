@@ -68,11 +68,13 @@ router.put('/profile', [
 // @access  Private
 router.put('/profile-image', [
   auth,
-  body('profileImage').isURL().withMessage('Please provide a valid image URL')
+  body('profileImage').notEmpty().withMessage('Profile image URL is required')
 ], async (req, res) => {
   try {
+    console.log('Profile image update request:', req.body);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({
         message: 'Validation failed',
         errors: errors.array()
@@ -80,6 +82,7 @@ router.put('/profile-image', [
     }
 
     const { profileImage } = req.body;
+    console.log('Updating profile image for user:', req.user._id, 'with URL:', profileImage);
 
     const user = await User.findByIdAndUpdate(
       req.user._id,

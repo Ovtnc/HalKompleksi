@@ -2,38 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { auth, adminOnly } = require('../middleware/auth');
 const MarketReport = require('../models/MarketReport');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-
-// Configure multer for image uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadPath = path.join(__dirname, '../../uploads/market-reports');
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
-    cb(null, uploadPath);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'market-report-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({ 
-  storage: storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Sadece resim dosyaları yüklenebilir!'), false);
-    }
-  }
-});
+const { marketReportUpload } = require('../middleware/upload');
 
 // @route   GET /api/market-reports
 // @desc    Get all active market reports
@@ -89,7 +58,7 @@ router.get('/:id', async (req, res) => {
 // @route   POST /api/market-reports
 // @desc    Create new market report (Admin only)
 // @access  Private (Admin)
-router.post('/', [auth, adminOnly, upload.single('image')], async (req, res) => {
+router.post('/', [auth, adminOnly, marketReportUpload.single('image')], async (req, res) => {
   try {
     const {
       title,
@@ -150,7 +119,7 @@ router.post('/', [auth, adminOnly, upload.single('image')], async (req, res) => 
 // @route   PUT /api/market-reports/:id
 // @desc    Update market report (Admin only)
 // @access  Private (Admin)
-router.put('/:id', [auth, adminOnly, upload.single('image')], async (req, res) => {
+router.put('/:id', [auth, adminOnly, marketReportUpload.single('image')], async (req, res) => {
   try {
     const {
       title,

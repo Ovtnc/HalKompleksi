@@ -112,10 +112,15 @@ const productSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for search
+// Optimized indexes for better query performance
 productSchema.index({ title: 'text', description: 'text', tags: 'text' });
-productSchema.index({ category: 1, isAvailable: 1 });
-productSchema.index({ seller: 1 });
+productSchema.index({ category: 1, isAvailable: 1, isApproved: 1 });
+productSchema.index({ seller: 1, isApproved: 1 });
+productSchema.index({ 'location.city': 1, isAvailable: 1, isApproved: 1 });
+productSchema.index({ price: 1, isAvailable: 1, isApproved: 1 });
+productSchema.index({ createdAt: -1, isApproved: 1 });
+productSchema.index({ favorites: 1, isApproved: 1 });
+productSchema.index({ isFeatured: 1, isAvailable: 1, isApproved: 1 });
 // productSchema.index({ 'location.coordinates': '2dsphere' });
 
 // Virtual for primary image

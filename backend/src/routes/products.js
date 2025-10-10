@@ -9,42 +9,26 @@ const { notifyProductPending, notifyMatchingBuyers } = require('../utils/notific
 
 const router = express.Router();
 
-// Middleware to fix image URLs
-const fixImageUrls = (req, res, next) => {
-  const originalJson = res.json;
-  res.json = function(data) {
-    if (data && data.products) {
-      data.products = data.products.map(product => {
-        if (product.images) {
-          product.images = product.images.map(image => {
-            if (image.url && image.url.startsWith('file://')) {
-              // Replace file:// URLs with placeholder
-              image.url = 'https://via.placeholder.com/400x300?text=Image+Not+Available';
-            }
-            return image;
-          });
+// Helper function to fix image URLs
+const fixImageUrls = (products) => {
+  return products.map(product => {
+    if (product.images) {
+      product.images = product.images.map(image => {
+        if (image.url && image.url.startsWith('file://')) {
+          // Replace file:// URLs with placeholder
+          image.url = 'https://via.placeholder.com/400x300?text=Image+Not+Available';
         }
-        return product;
+        return image;
       });
-    } else if (data && data.product) {
-      if (data.product.images) {
-        data.product.images = data.product.images.map(image => {
-          if (image.url && image.url.startsWith('file://')) {
-            image.url = 'https://via.placeholder.com/400x300?text=Image+Not+Available';
-          }
-          return image;
-        });
-      }
     }
-    return originalJson.call(this, data);
-  };
-  next();
+    return product;
+  });
 };
 
 // @route   GET /api/products
 // @desc    Get all products
 // @access  Public
-router.get('/', fixImageUrls, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const {
       page = 1,
@@ -125,8 +109,11 @@ router.get('/', fixImageUrls, async (req, res) => {
 
     const total = await Product.countDocuments(query);
 
+    // Fix image URLs
+    const fixedProducts = fixImageUrls(products);
+
     res.json({
-      products,
+      products: fixedProducts,
       totalPages: Math.ceil(total / limit),
       currentPage: parseInt(page),
       total
@@ -194,7 +181,6 @@ router.get('/search', fixImageUrls, async (req, res) => {
           { description: { $regex: searchQuery, $options: 'i' } }
         ]
       });
-      console.log('🔍 Search query:', searchQuery);
     }
 
     // Category filter
@@ -218,16 +204,15 @@ router.get('/search', fixImageUrls, async (req, res) => {
     const sortOptions = {};
     sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-    console.log('🔍 Final search query:', JSON.stringify(query, null, 2));
-
     const products = await Product.find(query)
       .populate('seller', 'name phone location sellerInfo profileImage')
       .sort(sortOptions)
       .limit(100);
 
-    console.log('📊 Found products:', products.length);
+    // Fix image URLs
+    const fixedProducts = fixImageUrls(products);
 
-    res.json({ products, total: products.length });
+    res.json({ products: fixedProducts, total: products.length });
   } catch (error) {
     console.error('Search products error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });

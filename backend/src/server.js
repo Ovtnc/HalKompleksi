@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const errorHandler = require('./middleware/errorHandler');
 require('dotenv').config();
 
 const connectDB = require('./config/database');
@@ -86,6 +87,9 @@ app.use('/api/market-reports', marketReportRoutes);
 
 // Static file serving for uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads/profiles', express.static(path.join(__dirname, '../uploads/profiles')));
+app.use('/uploads/products', express.static(path.join(__dirname, '../uploads/products')));
+app.use('/uploads/market-reports', express.static(path.join(__dirname, '../uploads/market-reports')));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -97,13 +101,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : {}
-  });
-});
+app.use(errorHandler);
 
 // 404 handler
 app.use((req, res) => {

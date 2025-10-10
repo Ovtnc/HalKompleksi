@@ -1,38 +1,7 @@
 const express = require('express');
-const upload = require('../middleware/upload');
+const { productUpload, profileUpload, marketReportUpload } = require('../middleware/upload');
 const { auth } = require('../middleware/auth');
 const path = require('path');
-const multer = require('multer');
-const fs = require('fs');
-
-// Profil resimleri için ayrı storage
-const profileStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadPath = 'public/uploads/profiles';
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'profile-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const profileUpload = multer({
-  storage: profileStorage,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB
-  },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Sadece resim dosyaları yüklenebilir'), false);
-    }
-  }
-});
 
 const router = express.Router();
 
@@ -68,7 +37,7 @@ router.post('/profile-image', auth, profileUpload.single('profileImage'), (req, 
 // @route   POST /api/upload/image
 // @desc    Upload single image
 // @access  Private
-router.post('/image', auth, upload.single('image'), (req, res) => {
+router.post('/image', auth, productUpload.single('image'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -77,7 +46,7 @@ router.post('/image', auth, upload.single('image'), (req, res) => {
     }
 
     // Dosya URL'sini oluştur
-    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/products/${req.file.filename}`;
 
     res.json({
       message: 'Resim başarıyla yüklendi',
@@ -97,7 +66,7 @@ router.post('/image', auth, upload.single('image'), (req, res) => {
 // @route   POST /api/upload/images
 // @desc    Upload multiple images
 // @access  Private
-router.post('/images', auth, upload.array('images', 10), (req, res) => {
+router.post('/images', auth, productUpload.array('images', 10), (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
@@ -107,7 +76,7 @@ router.post('/images', auth, upload.array('images', 10), (req, res) => {
 
     // Dosya URL'lerini oluştur
     const imageUrls = req.files.map(file => ({
-      url: `${req.protocol}://${req.get('host')}/uploads/${file.filename}`,
+      url: `${req.protocol}://${req.get('host')}/uploads/products/${file.filename}`,
       filename: file.filename,
       type: file.mimetype.startsWith('video/') ? 'video' : 'image',
       isPrimary: false
@@ -134,7 +103,7 @@ router.post('/images', auth, upload.array('images', 10), (req, res) => {
 // @route   POST /api/upload/media
 // @desc    Upload single media file (image or video)
 // @access  Private
-router.post('/media', auth, upload.single('media'), (req, res) => {
+router.post('/media', auth, productUpload.single('media'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -146,7 +115,7 @@ router.post('/media', auth, upload.single('media'), (req, res) => {
     const fileType = req.file.mimetype.startsWith('video/') ? 'video' : 'image';
     
     // Dosya URL'sini oluştur
-    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/products/${req.file.filename}`;
 
     res.json({
       message: 'Medya başarıyla yüklendi',

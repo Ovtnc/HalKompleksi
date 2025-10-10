@@ -5,6 +5,7 @@ const User = require('../models/User');
 const { auth, authorize } = require('../middleware/auth');
 const fs = require('fs');
 const path = require('path');
+const { notifyProductPending, notifyMatchingBuyers } = require('../utils/notifications');
 
 const router = express.Router();
 
@@ -54,7 +55,12 @@ router.get('/', fixImageUrls, async (req, res) => {
       maxPrice,
       search,
       sortBy = 'createdAt',
-      sortOrder = 'desc'
+      sortOrder = 'desc',
+      stockAvailable,
+      organic,
+      coldStorage,
+      featured,
+      inStock
     } = req.query;
 
     const query = { 
@@ -85,6 +91,27 @@ router.get('/', fixImageUrls, async (req, res) => {
         { tags: { $regex: search, $options: 'i' } }
       ];
       console.log('Search query:', search, 'Generated MongoDB query:', query.$or);
+    }
+
+    // Additional filters
+    if (stockAvailable === 'true') {
+      query.stock = { $gt: 0 };
+    }
+
+    if (organic === 'true') {
+      query['categoryData.organic'] = true;
+    }
+
+    if (coldStorage === 'true') {
+      query['categoryData.coldStorage'] = true;
+    }
+
+    if (featured === 'true') {
+      query.featured = true;
+    }
+
+    if (inStock === 'true') {
+      query.stock = { $gt: 0 };
     }
 
     const sortOptions = {};
@@ -375,6 +402,13 @@ router.post('/', [
 
     const populatedProduct = await Product.findById(product._id)
       .populate('seller', 'name phone location sellerInfo profileImage');
+
+    // Notify seller that product is pending approval
+    await notifyProductPending(req.user._id, product._id, product.title);
+
+    // Check and notify buyers with matching product requests
+    // Only notify if product is approved (we'll do this in approve endpoint instead)
+    // await notifyMatchingBuyers(populatedProduct);
 
     res.status(201).json({
       message: 'Product created successfully',

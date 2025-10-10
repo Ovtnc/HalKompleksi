@@ -4,6 +4,7 @@ const Product = require('../models/Product');
 const User = require('../models/User');
 const fs = require('fs');
 const path = require('path');
+const { notifyProductApproved, notifyProductRejected, notifyProductFeatured, notifyMatchingBuyers } = require('../utils/notifications');
 const router = express.Router();
 
 // @route   GET /api/admin/dashboard
@@ -104,6 +105,12 @@ router.put('/products/:id/approve', [auth, adminOnly], async (req, res) => {
       .populate('seller', 'name email phone userType')
       .populate('approvedBy', 'name email');
 
+    // Notify seller about approval
+    await notifyProductApproved(product.seller, product._id, product.title);
+
+    // Notify buyers with matching product requests
+    await notifyMatchingBuyers(populatedProduct);
+
     res.json({
       message: 'Product approved successfully',
       product: populatedProduct
@@ -134,6 +141,9 @@ router.put('/products/:id/reject', [auth, adminOnly], async (req, res) => {
     product.rejectedAt = new Date();
     
     await product.save();
+
+    // Notify seller about rejection
+    await notifyProductRejected(product.seller, product._id, product.title, reason);
 
     res.json({
       message: 'Product approval removed',
@@ -331,8 +341,14 @@ router.put('/products/:id/featured', [auth, adminOnly], async (req, res) => {
     }
 
     // Toggle featured status
+    const wasFeatured = product.isFeatured;
     product.isFeatured = !product.isFeatured;
     await product.save();
+
+    // Notify seller if product was just featured
+    if (product.isFeatured && !wasFeatured) {
+      await notifyProductFeatured(product.seller, product._id, product.title);
+    }
 
     res.json({
       message: `Product ${product.isFeatured ? 'marked as featured' : 'unmarked as featured'}`,

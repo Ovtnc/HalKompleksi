@@ -13,6 +13,7 @@ const orderRoutes = require('./routes/orders');
 const adminRoutes = require('./routes/admin');
 const uploadRoutes = require('./routes/upload');
 const locationRoutes = require('./routes/locations');
+const notificationRoutes = require('./routes/notifications');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -78,6 +79,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/locations', locationRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

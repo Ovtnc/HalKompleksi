@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 require('dotenv').config();
 
 const connectDB = require('./config/database');
@@ -14,6 +15,7 @@ const adminRoutes = require('./routes/admin');
 const uploadRoutes = require('./routes/upload');
 const locationRoutes = require('./routes/locations');
 const notificationRoutes = require('./routes/notifications');
+const marketReportRoutes = require('./routes/marketReports');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -80,6 +82,10 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/market-reports', marketReportRoutes);
+
+// Static file serving for uploads
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

@@ -24,9 +24,9 @@ router.get('/profile', auth, async (req, res) => {
 router.put('/profile', [
   auth,
   body('name').optional().trim().isLength({ min: 2, max: 50 }).withMessage('Name must be 2-50 characters'),
-  body('phone').optional().matches(/^[\+]?[1-9][\d]{0,15}$/).withMessage('Please provide a valid phone number'),
-  body('location.city').optional().trim().isLength({ min: 2 }).withMessage('City must be at least 2 characters'),
-  body('location.district').optional().trim().isLength({ min: 2 }).withMessage('District must be at least 2 characters'),
+  body('phone').optional().trim(),
+  body('location.city').optional().trim(),
+  body('location.district').optional().trim(),
   body('location.address').optional().trim(),
   body('sellerInfo.companyName').optional().trim(),
   body('sellerInfo.taxNumber').optional().trim(),
@@ -35,12 +35,14 @@ router.put('/profile', [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.error('Validation errors:', errors.array());
       return res.status(400).json({
         message: 'Validation failed',
         errors: errors.array()
       });
     }
 
+    console.log('Profile update request:', req.body);
     const { name, phone, location, sellerInfo } = req.body;
     
     // Fetch current user to merge updates

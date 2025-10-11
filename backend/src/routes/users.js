@@ -26,7 +26,11 @@ router.put('/profile', [
   body('name').optional().trim().isLength({ min: 2, max: 50 }).withMessage('Name must be 2-50 characters'),
   body('phone').optional().matches(/^[\+]?[1-9][\d]{0,15}$/).withMessage('Please provide a valid phone number'),
   body('location.city').optional().trim().isLength({ min: 2 }).withMessage('City must be at least 2 characters'),
-  body('location.district').optional().trim().isLength({ min: 2 }).withMessage('District must be at least 2 characters')
+  body('location.district').optional().trim().isLength({ min: 2 }).withMessage('District must be at least 2 characters'),
+  body('location.address').optional().trim(),
+  body('sellerInfo.companyName').optional().trim(),
+  body('sellerInfo.taxNumber').optional().trim(),
+  body('sellerInfo.address').optional().trim()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -38,13 +42,40 @@ router.put('/profile', [
     }
 
     const { name, phone, location, sellerInfo } = req.body;
+    
+    // Fetch current user to merge updates
+    const currentUser = await User.findById(req.user._id);
+    if (!currentUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
     const updateData = {};
 
     if (name) updateData.name = name;
     if (phone) updateData.phone = phone;
-    if (location) updateData.location = location;
-    if (sellerInfo && req.user.userType === 'seller') {
-      updateData.sellerInfo = sellerInfo;
+    
+    // Merge location data
+    if (location) {
+      updateData.location = {
+        city: location.city || currentUser.location?.city,
+        district: location.district || currentUser.location?.district,
+        address: location.address || currentUser.location?.address,
+        coordinates: location.coordinates || currentUser.location?.coordinates
+      };
+    }
+    
+    // Merge seller info data
+    if (sellerInfo && currentUser.userType === 'seller') {
+      updateData.sellerInfo = {
+        businessName: sellerInfo.businessName || currentUser.sellerInfo?.businessName,
+        businessType: sellerInfo.businessType || currentUser.sellerInfo?.businessType,
+        companyName: sellerInfo.companyName || currentUser.sellerInfo?.companyName,
+        taxNumber: sellerInfo.taxNumber || currentUser.sellerInfo?.taxNumber,
+        address: sellerInfo.address || currentUser.sellerInfo?.address,
+        description: sellerInfo.description || currentUser.sellerInfo?.description,
+        rating: currentUser.sellerInfo?.rating || 0,
+        totalRatings: currentUser.sellerInfo?.totalRatings || 0
+      };
     }
 
     const user = await User.findByIdAndUpdate(

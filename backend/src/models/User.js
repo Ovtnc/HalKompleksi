@@ -40,6 +40,7 @@ const userSchema = new mongoose.Schema({
   location: {
     city: String,
     district: String,
+    address: String,
     coordinates: {
       lat: Number,
       lng: Number
@@ -48,6 +49,9 @@ const userSchema = new mongoose.Schema({
   sellerInfo: {
     businessName: String,
     businessType: String,
+    companyName: String,
+    taxNumber: String,
+    address: String,
     description: String,
     rating: {
       type: Number,

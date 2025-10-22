@@ -35,9 +35,11 @@ router.get('/', async (req, res) => {
       limit = 10,
       category,
       city,
+      location,
       minPrice,
       maxPrice,
       search,
+      query,
       sortBy = 'createdAt',
       sortOrder = 'desc',
       stockAvailable,
@@ -47,7 +49,7 @@ router.get('/', async (req, res) => {
       inStock
     } = req.query;
 
-    const query = { 
+    const mongoQuery = { 
       $or: [
         { isApproved: true },
         { status: 'approved' }
@@ -55,53 +57,55 @@ router.get('/', async (req, res) => {
     };
 
     // Category filter
-    if (category) query.category = category;
+    if (category) mongoQuery.category = category;
 
     // Location filter
-    if (city) query['location.city'] = new RegExp(city, 'i');
+    const locationFilter = location || city;
+    if (locationFilter) mongoQuery['location.city'] = new RegExp(locationFilter, 'i');
 
     // Price range filter
     if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) query.price.$gte = parseFloat(minPrice);
-      if (maxPrice) query.price.$lte = parseFloat(maxPrice);
+      mongoQuery.price = {};
+      if (minPrice) mongoQuery.price.$gte = parseFloat(minPrice);
+      if (maxPrice) mongoQuery.price.$lte = parseFloat(maxPrice);
     }
 
     // Search filter - case insensitive search in title and description
-    if (search) {
-      query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { tags: { $regex: search, $options: 'i' } }
+    const searchTerm = search || query;
+    if (searchTerm) {
+      mongoQuery.$or = [
+        { title: { $regex: searchTerm, $options: 'i' } },
+        { description: { $regex: searchTerm, $options: 'i' } },
+        { tags: { $regex: searchTerm, $options: 'i' } }
       ];
-      console.log('Search query:', search, 'Generated MongoDB query:', query.$or);
+      console.log('Search query:', searchTerm, 'Generated MongoDB query:', mongoQuery.$or);
     }
 
     // Additional filters
     if (stockAvailable === 'true') {
-      query.stock = { $gt: 0 };
+      mongoQuery.stock = { $gt: 0 };
     }
 
     if (organic === 'true') {
-      query['categoryData.organic'] = true;
+      mongoQuery['categoryData.organic'] = true;
     }
 
     if (coldStorage === 'true') {
-      query['categoryData.coldStorage'] = true;
+      mongoQuery['categoryData.coldStorage'] = true;
     }
 
     if (featured === 'true') {
-      query.featured = true;
+      mongoQuery.featured = true;
     }
 
     if (inStock === 'true') {
-      query.stock = { $gt: 0 };
+      mongoQuery.stock = { $gt: 0 };
     }
 
     const sortOptions = {};
     sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-    const products = await Product.find(query)
+    const products = await Product.find(mongoQuery)
       .populate('seller', 'name phone location sellerInfo profileImage')
       .sort(sortOptions)
       .limit(limit * 1)
@@ -150,7 +154,7 @@ router.get('/featured', async (req, res) => {
 // @route   GET /api/products/search
 // @desc    Search products
 // @access  Public
-router.get('/search', fixImageUrls, async (req, res) => {
+router.get('/search', async (req, res) => {
   try {
     const {
       query: searchQuery,
@@ -305,7 +309,7 @@ router.put('/:id/views', async (req, res) => {
 // @route   GET /api/products/:id
 // @desc    Get product by ID
 // @access  Public
-router.get('/:id', fixImageUrls, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
       .populate('seller', 'name phone location sellerInfo profileImage');
@@ -317,22 +321,14 @@ router.get('/:id', fixImageUrls, async (req, res) => {
     // Increment view count
     await product.incrementViews();
 
-    // Refresh seller info to get latest profile image
-    if (product.seller) {
-      console.log('Product seller info:', product.seller);
-      console.log('Seller _id:', product.seller._id);
-      console.log('Seller ID type:', typeof product.seller._id);
-      
-      const sellerId = product.seller._id || product.seller;
-      console.log('Using seller ID:', sellerId);
-      
-      const updatedSeller = await User.findById(sellerId, 'name phone location sellerInfo profileImage');
-      if (updatedSeller) {
-        console.log('Updated seller info:', updatedSeller);
-        product.seller = updatedSeller;
-      } else {
-        console.log('No updated seller found for ID:', sellerId);
-      }
+    // Fix image URLs
+    if (product.images) {
+      product.images = product.images.map(image => {
+        if (image.url && image.url.startsWith('file://')) {
+          image.url = 'https://via.placeholder.com/400x300?text=Image+Not+Available';
+        }
+        return image;
+      });
     }
 
     res.json({ product });

@@ -1,0 +1,263 @@
+{
+  "meta": {
+    "project": "Hal Kompleksi - Dijital Toptan Satış Platformu",
+    "date": "2025-10-20",
+    "prepared_by": "Okan Vatancı"
+  },
+  "product_overview": "Hal Kompleksi is a modern B2B and B2C mobile e-commerce platform that digitalizes traditional wholesale marketplace operations, enabling secure, fast, and easy trade between wholesalers, producers, and buyers through iOS and Android applications.",
+  "core_goals": [
+    "Provide accessible product listings without physical marketplace visits",
+    "Ensure transparency with up-to-date pricing and market reports",
+    "Increase efficiency with fast product search, filtering, and order management",
+    "Enable direct communication between buyers and sellers",
+    "Guarantee reliability through registered sellers and user reviews",
+    "Offer role-based experiences for buyers, sellers, and admins",
+    "Maintain strong security and data protection mechanisms"
+  ],
+  "key_features": [
+    "JWT-based secure user authentication with login, registration, and password reset",
+    "Product management including CRUD operations with multi-media support and location filtering",
+    "Favorites system for users to save preferred products",
+    "Advanced search and filter by category, price, and location",
+    "Market reports publishing and sharing for admins",
+    "Real-time notifications for orders, requests, and system updates",
+    "Order management with status tracking and delivery info",
+    "Product request feature for buyers to request specific products",
+    "User profile management including personal info and profile images",
+    "Admin dashboard with user, product, category, and system management",
+    "Seller dashboard with sales statistics and product order management",
+    "Category and location management for products and market reports",
+    "File upload system supporting images and videos",
+    "Email service for password resets and notifications",
+    "Social sharing of products to external platforms",
+    "Full-screen image lightbox with swipe navigation",
+    "Help and support FAQ section",
+    "Role-based navigation with stack and tab navigators",
+    "Centralized API service with authentication and error handling"
+  ],
+  "user_flow_summary": [
+    "Buyer flow: Register → Create profile → Search/filter products → View product details → Add to favorites → Place order → Track order → Rate seller",
+    "Seller flow: Register → Create seller profile → Await admin approval → Add/edit/delete products with media upload → Get product approval → Publish products → Manage orders and stock",
+    "Admin flow: Login → Review and approve new seller requests → Review and approve/edit product submissions → Publish market price reports → Manage users, categories, and locations → Monitor system statistics"
+  ],
+  "validation_criteria": [
+    "All user roles (buyer, seller, admin) must authenticate securely using JWT tokens",
+    "Product CRUD operations must support multiple media uploads and proper location filtering",
+    "Favorites functionality must accurately add and remove products and display user favorites",
+    "Search and filtering must return relevant and correctly filtered product results",
+    "Real-time notifications must be delivered for orders and product requests without delay",
+    "Order statuses must be tracked and updated correctly in the system",
+    "Market reports must be publishable by admins with images and accessible by users",
+    "Admin panel must support reviewing, approving, and managing users, products, and categories",
+    "Role-based navigation must restrict and allow access appropriately",
+    "All inputs must be validated to prevent security vulnerabilities and errors",
+    "File uploads must enforce type and size restrictions and be securely handled",
+    "Email functionalities like password resets must successfully send well-formed mails",
+    "System must have effective error handling and logging mechanisms in place"
+  ],
+  "code_summary": {
+    "tech_stack": [
+      "TypeScript",
+      "JavaScript",
+      "React Native",
+      "Expo",
+      "Node.js",
+      "Express.js",
+      "MongoDB",
+      "React Navigation",
+      "AsyncStorage",
+      "Nodemailer"
+    ],
+    "features": [
+      {
+        "name": "Authentication System",
+        "description": "User authentication with JWT tokens, login, registration, forgot password, and role-based access (buyer, seller, admin)",
+        "files": [
+          "backend/src/routes/auth.js",
+          "backend/src/middleware/auth.js",
+          "backend/src/models/User.js",
+          "HalKompleksi/src/screens/auth/LoginScreen.tsx",
+          "HalKompleksi/src/screens/auth/RegisterScreen.tsx",
+          "HalKompleksi/src/screens/auth/ForgotPasswordScreen.tsx",
+          "HalKompleksi/src/services/AuthContext.tsx"
+        ]
+      },
+      {
+        "name": "Product Management",
+        "description": "CRUD operations for products with categories, images, videos, pricing, and location filtering",
+        "files": [
+          "backend/src/routes/products.js",
+          "backend/src/models/Product.js",
+          "HalKompleksi/src/screens/main/ProductsScreen.tsx",
+          "HalKompleksi/src/screens/main/ProductDetailScreen.tsx",
+          "HalKompleksi/src/screens/seller/AddProductScreen.tsx",
+          "HalKompleksi/src/screens/seller/EditProductScreen.tsx",
+          "HalKompleksi/src/screens/seller/MyProductsScreen.tsx"
+        ]
+      },
+      {
+        "name": "Favorites System",
+        "description": "Users can add/remove products to/from favorites and view their favorite products list",
+        "files": [
+          "backend/src/routes/products.js",
+          "HalKompleksi/src/screens/main/FavoritesScreen.tsx",
+          "HalKompleksi/src/services/api.ts"
+        ]
+      },
+      {
+        "name": "Search and Filter",
+        "description": "Search products by name, category, location, and price range with advanced filtering",
+        "files": [
+          "backend/src/routes/products.js",
+          "HalKompleksi/src/screens/main/SearchScreen.tsx",
+          "HalKompleksi/src/screens/main/ProductsScreen.tsx"
+        ]
+      },
+      {
+        "name": "Market Reports",
+        "description": "Admin can create and share market price reports with images for different cities and markets",
+        "files": [
+          "backend/src/routes/marketReports.js",
+          "backend/src/models/MarketReport.js",
+          "HalKompleksi/src/screens/main/MarketReportsScreen.tsx",
+          "HalKompleksi/src/screens/main/MarketReportDetailScreen.tsx",
+          "HalKompleksi/src/screens/admin/MarketShareScreen.tsx"
+        ]
+      },
+      {
+        "name": "Notification System",
+        "description": "Real-time notifications for product requests, orders, and system updates",
+        "files": [
+          "backend/src/routes/notifications.js",
+          "backend/src/models/Notification.js",
+          "backend/src/utils/notifications.js",
+          "HalKompleksi/src/screens/main/NotificationsScreen.tsx"
+        ]
+      },
+      {
+        "name": "Order Management",
+        "description": "Create, track, and manage orders with status updates and delivery information",
+        "files": [
+          "backend/src/routes/orders.js",
+          "backend/src/models/Order.js",
+          "HalKompleksi/src/screens/main/OrdersScreen.tsx",
+          "HalKompleksi/src/screens/main/OrderDetailScreen.tsx"
+        ]
+      },
+      {
+        "name": "Product Requests",
+        "description": "Buyers can request specific products and sellers receive notifications",
+        "files": [
+          "backend/src/routes/products.js",
+          "backend/src/models/ProductRequest.js",
+          "HalKompleksi/src/screens/main/ProductRequestScreen.tsx",
+          "HalKompleksi/src/screens/main/ProductRequestDetailScreen.tsx"
+        ]
+      },
+      {
+        "name": "User Profile Management",
+        "description": "Users can view and edit their profile including name, phone, email, and profile image",
+        "files": [
+          "backend/src/routes/users.js",
+          "backend/src/models/User.js",
+          "HalKompleksi/src/screens/main/ProfileScreen.tsx",
+          "HalKompleksi/src/screens/profile/PersonalInfoScreen.tsx",
+          "HalKompleksi/src/screens/profile/SettingsScreen.tsx"
+        ]
+      },
+      {
+        "name": "Admin Dashboard",
+        "description": "Admin panel with statistics, user management, product approval, and system monitoring",
+        "files": [
+          "backend/src/routes/admin.js",
+          "HalKompleksi/src/screens/admin/AdminDashboardScreen.tsx",
+          "HalKompleksi/src/screens/admin/AdminUsersScreen.tsx",
+          "HalKompleksi/src/screens/admin/AdminAllProductsScreen.tsx",
+          "HalKompleksi/src/screens/admin/AdminPendingProductsScreen.tsx",
+          "HalKompleksi/src/screens/admin/AdminFeaturedProductsScreen.tsx"
+        ]
+      },
+      {
+        "name": "Seller Dashboard",
+        "description": "Seller panel with sales statistics, product management, and order tracking",
+        "files": [
+          "HalKompleksi/src/screens/seller/SellerDashboardScreen.tsx",
+          "HalKompleksi/src/screens/seller/MyProductsScreen.tsx",
+          "HalKompleksi/src/screens/seller/AddProductScreen.tsx",
+          "HalKompleksi/src/screens/seller/EditProductScreen.tsx"
+        ]
+      },
+      {
+        "name": "Category Management",
+        "description": "Product categories with icons and filtering capabilities",
+        "files": [
+          "backend/src/routes/categories.js",
+          "backend/src/models/Category.js",
+          "HalKompleksi/src/screens/main/ProductsScreen.tsx"
+        ]
+      },
+      {
+        "name": "Location Management",
+        "description": "City and market location management for products and market reports",
+        "files": [
+          "backend/src/routes/locations.js",
+          "backend/src/models/Location.js",
+          "HalKompleksi/src/screens/seller/AddProductScreen.tsx"
+        ]
+      },
+      {
+        "name": "File Upload System",
+        "description": "Upload and manage product images, videos, market report images, and profile pictures",
+        "files": [
+          "backend/src/routes/upload.js",
+          "backend/src/middleware/upload.js",
+          "HalKompleksi/src/screens/seller/AddProductScreen.tsx",
+          "HalKompleksi/src/screens/admin/MarketShareScreen.tsx"
+        ]
+      },
+      {
+        "name": "Email Service",
+        "description": "Send password reset emails and welcome emails using Nodemailer with Gmail SMTP",
+        "files": [
+          "backend/src/utils/emailService.js",
+          "backend/src/routes/auth.js"
+        ]
+      },
+      {
+        "name": "Social Sharing",
+        "description": "Share products on social media platforms with image and description",
+        "files": [
+          "HalKompleksi/src/screens/main/ProductDetailScreen.tsx"
+        ]
+      },
+      {
+        "name": "Image Lightbox",
+        "description": "Full-screen image viewer with swipe navigation for product images",
+        "files": [
+          "HalKompleksi/src/screens/main/ProductDetailScreen.tsx"
+        ]
+      },
+      {
+        "name": "Help & Support",
+        "description": "FAQ section and help documentation for users",
+        "files": [
+          "HalKompleksi/src/screens/profile/HelpScreen.tsx"
+        ]
+      },
+      {
+        "name": "Navigation System",
+        "description": "Stack and bottom tab navigation with role-based routing",
+        "files": [
+          "HalKompleksi/src/navigation/AppNavigator.tsx"
+        ]
+      },
+      {
+        "name": "API Service Layer",
+        "description": "Centralized API service with authentication, error handling, and request management",
+        "files": [
+          "HalKompleksi/src/services/api.ts"
+        ]
+      }
+    ]
+  }
+}

@@ -17,6 +17,7 @@ const uploadRoutes = require('./routes/upload');
 const locationRoutes = require('./routes/locations');
 const notificationRoutes = require('./routes/notifications');
 const marketReportRoutes = require('./routes/marketReports');
+const categoryRoutes = require('./routes/categories');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -44,7 +45,11 @@ app.use(cors({
     'http://192.168.0.27:8088', 
     'http://localhost:5001',
     'http://192.168.0.27:5001',
-    'exp://192.168.0.27:8081'
+    'http://192.168.1.109:8081',
+    'http://192.168.1.109:8082',
+    'exp://192.168.0.27:8081',
+    'exp://192.168.1.109:8081',
+    'exp://192.168.1.109:8082'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -84,6 +89,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/market-reports', marketReportRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Static file serving for uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -97,6 +103,17 @@ app.get('/api/health', (req, res) => {
     status: 'OK',
     message: 'Hal Kompleksi API is running',
     timestamp: new Date().toISOString()
+  });
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.0'
   });
 });
 

@@ -29,6 +29,20 @@ const userSchema = new mongoose.Schema({
     enum: ['buyer', 'seller', 'admin'],
     required: [true, 'User type is required']
   },
+  userRoles: [{
+    type: String,
+    enum: ['buyer', 'seller'],
+  }],
+  activeRole: {
+    type: String,
+    enum: ['buyer', 'seller', 'admin'],
+  },
+  resetPasswordToken: {
+    type: String
+  },
+  resetPasswordExpiry: {
+    type: Date
+  },
   profileImage: {
     type: String,
     default: null
@@ -85,6 +99,23 @@ userSchema.index({ phone: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ 'location.city': 1 });
 userSchema.index({ createdAt: -1 });
+
+// Set userRoles and activeRole based on userType for backward compatibility
+userSchema.pre('save', function(next) {
+  // If userRoles is not set or empty, initialize from userType
+  if (!this.userRoles || this.userRoles.length === 0) {
+    if (this.userType === 'buyer' || this.userType === 'seller') {
+      this.userRoles = [this.userType];
+    }
+  }
+  
+  // If activeRole is not set, use userType
+  if (!this.activeRole) {
+    this.activeRole = this.userType;
+  }
+  
+  next();
+});
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {

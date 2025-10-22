@@ -1,0 +1,566 @@
+[
+  {
+    "id": "TC001",
+    "title": "User Registration Success",
+    "description": "Verify that a user can successfully register with valid inputs for buyer, seller, and admin roles.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the registration screen."
+      },
+      {
+        "type": "action",
+        "description": "Input valid user information including role selection."
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that registration completes successfully and a confirmation message is shown."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user receives a welcome email."
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "User Login with Valid Credentials",
+    "description": "Verify login is successful for all roles using correct username/email and password.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login screen."
+      },
+      {
+        "type": "action",
+        "description": "Enter valid credentials for buyer, seller, and admin separately."
+      },
+      {
+        "type": "action",
+        "description": "Click the login button."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user is logged in and navigated to appropriate dashboard based on role."
+      },
+      {
+        "type": "assertion",
+        "description": "Check a valid JWT token is received and stored securely."
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "User Login Failure with Invalid Credentials",
+    "description": "Verify the system rejects login attempts with invalid combinations of username/email and password.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login screen."
+      },
+      {
+        "type": "action",
+        "description": "Enter invalid username/email or incorrect password."
+      },
+      {
+        "type": "action",
+        "description": "Click the login button."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that login fails and an appropriate error message is displayed."
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Password Reset Email Sent",
+    "description": "Verify that when a user requests a password reset, the system sends a password reset email successfully.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the forgot password screen."
+      },
+      {
+        "type": "action",
+        "description": "Enter a registered email address."
+      },
+      {
+        "type": "action",
+        "description": "Submit the password reset request."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that an email is sent to the user with proper reset instructions."
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Product CRUD Operations with Media Uploads",
+    "description": "Verify that sellers can create, read, update, and delete products with multiple images/videos and that location filtering works properly.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as seller and navigate to Add Product screen."
+      },
+      {
+        "type": "action",
+        "description": "Fill in product details including category, price, and location."
+      },
+      {
+        "type": "action",
+        "description": "Upload multiple images and videos with valid file types and sizes."
+      },
+      {
+        "type": "action",
+        "description": "Submit the product creation."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that the product is created successfully and appears in the seller's product list."
+      },
+      {
+        "type": "action",
+        "description": "Edit the product details and multimedia files."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that the updates are saved and shown correctly."
+      },
+      {
+        "type": "action",
+        "description": "Delete the product."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that the product is removed successfully and no longer visible to users."
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Favorites System Add and Remove",
+    "description": "Verify users can add products to their favorites list, remove them, and view their favorites accurately.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as a buyer and navigate to a product detail page."
+      },
+      {
+        "type": "action",
+        "description": "Add the product to favorites."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify product appears in the user's favorites list."
+      },
+      {
+        "type": "action",
+        "description": "Remove the product from favorites."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify product is removed from the favorites list."
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Advanced Search and Filter by Category, Price, Location",
+    "description": "Verify the product search and filtering returns accurate and relevant results based on category, price range, and location filters.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the search screen."
+      },
+      {
+        "type": "action",
+        "description": "Enter product name keywords and apply category, price, and location filters."
+      },
+      {
+        "type": "action",
+        "description": "Initiate the search."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the returned product list matches the search criteria and filters applied."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that invalid filter inputs are handled gracefully."
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Real-time Notifications Delivery",
+    "description": "Verify that buyers and sellers receive real-time notifications for orders, product requests, and system updates without delay.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Trigger an order placement by a buyer."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the seller receives a real-time order notification."
+      },
+      {
+        "type": "action",
+        "description": "Trigger a product request creation by a buyer."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify appropriate sellers receive real-time request notifications."
+      },
+      {
+        "type": "action",
+        "description": "Generate a system update notification by admin."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify users receive the notification instantly."
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Order Management and Status Tracking",
+    "description": "Verify the order life cycle from creation, status updates, delivery info updates, to completion or cancellation functions correctly.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Place a new order as a buyer."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify order creation and initial status are correct."
+      },
+      {
+        "type": "action",
+        "description": "Update order status stepwise as a seller/admin. (e.g., pending, processing, shipped, delivered)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify status changes reflect correctly for buyer and seller."
+      },
+      {
+        "type": "action",
+        "description": "Update delivery information."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify delivery info is visible and accurate."
+      },
+      {
+        "type": "action",
+        "description": "Cancel an order and verify cancellation is processed."
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Market Reports Publishing and Access",
+    "description": "Verify admins can create, upload images, and publish market price reports and that users can access and view them.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as admin and navigate to Market Reports section."
+      },
+      {
+        "type": "action",
+        "description": "Create a new market report with images for different cities and markets."
+      },
+      {
+        "type": "action",
+        "description": "Publish the market report."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the published report is listed and viewable by users."
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Admin Dashboard Management Functions",
+    "description": "Verify the admin dashboard supports reviewing and approving sellers and products, managing users, categories, locations, and monitoring system statistics.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as admin and open the Admin Dashboard."
+      },
+      {
+        "type": "action",
+        "description": "Review pending seller requests and approve or reject."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify seller approval updates the seller status appropriately."
+      },
+      {
+        "type": "action",
+        "description": "Review and approve/edit pending product submissions."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify products are published or declined correctly."
+      },
+      {
+        "type": "action",
+        "description": "Edit categories and locations."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify changes persist and reflect across the system."
+      },
+      {
+        "type": "action",
+        "description": "Check system statistics for accuracy."
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Role-based Navigation and Access Control",
+    "description": "Verify navigation restricts or allows access correctly based on user roles (buyer, seller, admin).",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as buyer and attempt to access seller and admin areas."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is denied for unauthorized areas."
+      },
+      {
+        "type": "action",
+        "description": "Login as seller and verify access to appropriate seller dashboards and inability to access admin areas."
+      },
+      {
+        "type": "action",
+        "description": "Login as admin and verify full admin navigation access."
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Input Validation and Security Checks",
+    "description": "Verify form inputs across the application validate data correctly and protect against common vulnerabilities (e.g., injection, XSS).",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Enter invalid, malicious, and boundary input values into registration, login, product creation, and search forms."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify inputs are sanitized, and invalid data is rejected with informative error messages."
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "File Upload Validation and Security",
+    "description": "Verify the file upload system enforces type and size restrictions and handles uploads securely for images and videos.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to upload supported image and video files within size limits."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify upload success and proper storage."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to upload unsupported or malicious file types and files exceeding size limits."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the system rejects these uploads and shows appropriate errors."
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Email Sending for Notifications and Password Reset",
+    "description": "Verify that emails sent for password resets and notifications are well-formed and successfully delivered.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Trigger sending of password reset email."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the email is received and formatted correctly."
+      },
+      {
+        "type": "action",
+        "description": "Trigger sending of notification emails (e.g., new order alerts)."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the notification emails are received as expected."
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Social Sharing of Products",
+    "description": "Verify users can share product details with images and descriptions to external social media platforms.",
+    "category": "functional",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to a product detail page."
+      },
+      {
+        "type": "action",
+        "description": "Use the social sharing feature to share the product on a supported social platform."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that the shared content contains correct product image, title, and description."
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "Image Lightbox Full-Screen Viewer Functionality",
+    "description": "Verify that tapping product images opens a full-screen lightbox with swipe navigation among multiple images.",
+    "category": "ui",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to a product detail page with multiple images."
+      },
+      {
+        "type": "action",
+        "description": "Tap on product images to open the lightbox viewer."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify full-screen display of images with smooth swipe navigation and exit options."
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "Help & Support FAQ Accessibility",
+    "description": "Verify users can access the FAQ help section and that content is properly displayed and searchable.",
+    "category": "functional",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the Help & Support section."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify all FAQ entries are listed and readable."
+      },
+      {
+        "type": "action",
+        "description": "Use the FAQ search feature."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify search returns relevant help topics."
+      }
+    ]
+  },
+  {
+    "id": "TC019",
+    "title": "API Service Centralized Authentication and Error Handling",
+    "description": "Verify that all API calls include JWT authentication headers, handle errors appropriately, and provide meaningful error messages to the application.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Make authorized API requests with valid JWT tokens."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify successful responses with proper data."
+      },
+      {
+        "type": "action",
+        "description": "Make API requests with invalid or expired JWT tokens."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify errors are returned with proper status codes and messages."
+      },
+      {
+        "type": "action",
+        "description": "Trigger API request errors (e.g., malformed requests, server errors)."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify error handling returns consistent and informative error notifications."
+      }
+    ]
+  },
+  {
+    "id": "TC020",
+    "title": "Product Request Feature for Buyers and Sellers",
+    "description": "Verify buyers can create product requests and sellers receive notifications and can view details appropriately.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as buyer and create a product request with valid details."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the product request is saved and listed under buyer's requests."
+      },
+      {
+        "type": "action",
+        "description": "Verify sellers receive real-time notifications of new product requests."
+      },
+      {
+        "type": "assertion",
+        "description": "As seller, verify the ability to view and respond to product request details."
+      }
+    ]
+  }
+]

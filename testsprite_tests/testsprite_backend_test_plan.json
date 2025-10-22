@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "jwt based user authentication",
+    "description": "Test the user authentication system using JWT tokens including login, registration, and password reset endpoints to ensure secure access for buyer, seller, and admin roles."
+  },
+  {
+    "id": "TC002",
+    "title": "product crud operations with media and location filtering",
+    "description": "Verify the create, read, update, and delete operations for products including support for multiple images and videos, and filtering products by location."
+  },
+  {
+    "id": "TC003",
+    "title": "favorites system add remove and list",
+    "description": "Test the functionality for users to add products to favorites, remove them, and retrieve the list of favorite products accurately."
+  },
+  {
+    "id": "TC004",
+    "title": "search and filter products by criteria",
+    "description": "Validate the product search and filtering API to ensure it returns correct results based on name, category, location, and price range."
+  },
+  {
+    "id": "TC005",
+    "title": "market reports publishing and access",
+    "description": "Test the admin's ability to create, publish, and share market price reports with images and verify that users can access these reports."
+  },
+  {
+    "id": "TC006",
+    "title": "real time notifications delivery",
+    "description": "Verify that real-time notifications for product requests, orders, and system updates are delivered promptly and correctly to users."
+  },
+  {
+    "id": "TC007",
+    "title": "order management status tracking",
+    "description": "Test the order creation, status updates, and delivery information tracking to ensure orders are managed correctly throughout their lifecycle."
+  },
+  {
+    "id": "TC008",
+    "title": "product request creation and notification",
+    "description": "Validate the product request feature where buyers can request specific products and sellers receive notifications about these requests."
+  },
+  {
+    "id": "TC009",
+    "title": "user profile view and edit",
+    "description": "Test the user profile management endpoints to view and update personal information including name, phone, email, and profile image."
+  },
+  {
+    "id": "TC010",
+    "title": "admin dashboard user and product management",
+    "description": "Verify the admin dashboard APIs for managing users, approving products, and monitoring system statistics."
+  }
+]

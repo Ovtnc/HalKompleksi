@@ -186,6 +186,62 @@ router.get('/sellers/:id', async (req, res) => {
   }
 });
 
+// @route   POST /api/users/switch-role
+// @desc    Switch user active role
+// @access  Private
+router.post('/switch-role', [
+  auth,
+  body('role').isIn(['buyer', 'seller']).withMessage('Role must be buyer or seller')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { role } = req.body;
+
+    // Check if user has this role
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Add role to userRoles if not already present
+    if (!user.userRoles.includes(role)) {
+      user.userRoles.push(role);
+    }
+
+    // Set active role
+    user.activeRole = role;
+    await user.save();
+
+    const updatedUser = await User.findById(req.user._id).select('-password');
+
+    res.json({
+      message: 'Role switched successfully',
+      user: {
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        userType: updatedUser.userType,
+        userRoles: updatedUser.userRoles,
+        activeRole: updatedUser.activeRole,
+        profileImage: updatedUser.profileImage,
+        location: updatedUser.location,
+        sellerInfo: updatedUser.sellerInfo
+      }
+    });
+  } catch (error) {
+    console.error('Switch role error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   DELETE /api/users/account
 // @desc    Delete user account
 // @access  Private

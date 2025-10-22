@@ -1,8 +1,10 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
+const { sendPasswordResetEmail, sendWelcomeEmail } = require('../utils/emailService');
 
 const router = express.Router();
 
@@ -55,6 +57,14 @@ router.post('/register', [
 
     const token = generateToken(user._id);
 
+    // Send welcome email
+    try {
+      await sendWelcomeEmail(email, name);
+    } catch (emailError) {
+      console.error('Welcome email failed:', emailError);
+      // Don't fail registration if email fails
+    }
+
     res.status(201).json({
       message: 'User registered successfully',
       token,
@@ -64,6 +74,8 @@ router.post('/register', [
         email: user.email,
         phone: user.phone,
         userType: user.userType,
+        userRoles: user.userRoles,
+        activeRole: user.activeRole,
         profileImage: user.profileImage
       }
     });
@@ -127,6 +139,8 @@ router.post('/login', [
         email: user.email,
         phone: user.phone,
         userType: user.userType,
+        userRoles: user.userRoles,
+        activeRole: user.activeRole,
         profileImage: user.profileImage
       }
     });
@@ -150,6 +164,8 @@ router.get('/me', auth, async (req, res) => {
         email: req.user.email,
         phone: req.user.phone,
         userType: req.user.userType,
+        userRoles: req.user.userRoles,
+        activeRole: req.user.activeRole,
         profileImage: req.user.profileImage,
         location: req.user.location,
         sellerInfo: req.user.sellerInfo
@@ -170,6 +186,118 @@ router.post('/logout', auth, (req, res) => {
   res.json({
     message: 'Logout successful'
   });
+});
+
+// @route   POST /api/auth/forgot-password
+// @desc    Send password reset email
+// @access  Public
+router.post('/forgot-password', [
+  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { email } = req.body;
+
+    // Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found with this email address'
+      });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    // Save reset token to user
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpiry = resetTokenExpiry;
+    await user.save();
+
+    // Send password reset email
+    try {
+      const emailResult = await sendPasswordResetEmail(email, resetToken);
+      if (emailResult.success) {
+        res.json({
+          message: 'Password reset token sent to your email'
+        });
+      } else {
+        console.error('Email sending failed:', emailResult.error);
+        res.status(500).json({
+          message: 'Failed to send reset email. Please try again later.'
+        });
+      }
+    } catch (emailError) {
+      console.error('Email sending error:', emailError);
+      res.status(500).json({
+        message: 'Failed to send reset email. Please try again later.'
+      });
+    }
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({
+      message: 'Server error'
+    });
+  }
+});
+
+// @route   POST /api/auth/reset-password
+// @desc    Reset password with token
+// @access  Public
+router.post('/reset-password', [
+  body('token').notEmpty().withMessage('Reset token is required'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { token, password } = req.body;
+
+    // Find user with valid reset token
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpiry: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        message: 'Invalid or expired reset token'
+      });
+    }
+
+    // Update password
+    const bcrypt = require('bcryptjs');
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpiry = undefined;
+    await user.save();
+
+    res.json({
+      message: 'Password reset successful'
+    });
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({
+      message: 'Server error'
+    });
+  }
 });
 
 module.exports = router;

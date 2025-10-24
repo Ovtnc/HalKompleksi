@@ -76,7 +76,9 @@ router.post('/register', [
         userType: user.userType,
         userRoles: user.userRoles,
         activeRole: user.activeRole,
-        profileImage: user.profileImage
+        profileImage: user.profileImage,
+        isActive: user.isActive,
+        isApproved: user.isApproved || true
       }
     });
   } catch (error) {
@@ -141,7 +143,9 @@ router.post('/login', [
         userType: user.userType,
         userRoles: user.userRoles,
         activeRole: user.activeRole,
-        profileImage: user.profileImage
+        profileImage: user.profileImage,
+        isActive: user.isActive,
+        isApproved: user.isApproved || true
       }
     });
   } catch (error) {
@@ -168,7 +172,9 @@ router.get('/me', auth, async (req, res) => {
         activeRole: req.user.activeRole,
         profileImage: req.user.profileImage,
         location: req.user.location,
-        sellerInfo: req.user.sellerInfo
+        sellerInfo: req.user.sellerInfo,
+        isActive: req.user.isActive,
+        isApproved: req.user.isApproved || true
       }
     });
   } catch (error) {

@@ -50,11 +50,18 @@ router.get('/', async (req, res) => {
     } = req.query;
 
     const mongoQuery = { 
-      $or: [
-        { isApproved: true },
-        { status: 'approved' }
+      $and: [
+        {
+          $or: [
+            { isApproved: true },
+            { status: 'approved' }
+          ]
+        },
+        { isAvailable: true }  // Only show available products
       ]
     };
+
+    console.log('🔍 Products API: Query filters:', mongoQuery);
 
     // Category filter
     if (category) mongoQuery.category = category;
@@ -95,7 +102,7 @@ router.get('/', async (req, res) => {
     }
 
     if (featured === 'true') {
-      mongoQuery.featured = true;
+      mongoQuery.isFeatured = true;
     }
 
     if (inStock === 'true') {
@@ -163,7 +170,8 @@ router.get('/search', async (req, res) => {
       minPrice,
       maxPrice,
       sortBy = 'createdAt',
-      sortOrder = 'desc'
+      sortOrder = 'desc',
+      featured
     } = req.query;
 
     const query = { 
@@ -173,7 +181,8 @@ router.get('/search', async (req, res) => {
             { isApproved: true },
             { status: 'approved' }
           ]
-        }
+        },
+        { isAvailable: true }  // Only show available products
       ]
     };
 
@@ -203,6 +212,11 @@ router.get('/search', async (req, res) => {
       if (minPrice) priceQuery.$gte = parseFloat(minPrice);
       if (maxPrice) priceQuery.$lte = parseFloat(maxPrice);
       query.$and.push({ price: priceQuery });
+    }
+
+    // Featured filter
+    if (featured === 'true') {
+      query.$and.push({ isFeatured: true });
     }
 
     const sortOptions = {};
@@ -327,6 +341,10 @@ router.get('/:id', async (req, res) => {
         if (image.url && image.url.startsWith('file://')) {
           image.url = 'https://via.placeholder.com/400x300?text=Image+Not+Available';
         }
+        // Eğer URL localhost ile başlıyorsa, doğru port ile değiştir
+        else if (image.url && image.url.includes('localhost')) {
+          image.url = image.url.replace('localhost:5000', 'localhost:5001');
+        }
         return image;
       });
     }
@@ -352,8 +370,13 @@ router.post('/', [
   body('images').optional().isArray().withMessage('Images must be an array')
 ], async (req, res) => {
   try {
+    console.log('🚀 Product creation request received');
+    console.log('📦 Request body:', req.body);
+    console.log('👤 User:', req.user._id);
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('❌ Validation errors:', errors.array());
       return res.status(400).json({
         message: 'Validation failed',
         errors: errors.array()
@@ -378,25 +401,25 @@ router.post('/', [
       images: processedImages
     };
 
+    console.log('📦 Final product data:', productData);
+
     const product = new Product(productData);
     await product.save();
+    console.log('✅ Product saved to database:', product._id);
 
     const populatedProduct = await Product.findById(product._id)
       .populate('seller', 'name phone location sellerInfo profileImage');
 
     // Notify seller that product is pending approval
     await notifyProductPending(req.user._id, product._id, product.title);
-
-    // Check and notify buyers with matching product requests
-    // Only notify if product is approved (we'll do this in approve endpoint instead)
-    // await notifyMatchingBuyers(populatedProduct);
+    console.log('📧 Notification sent to seller');
 
     res.status(201).json({
       message: 'Product created successfully',
       product: populatedProduct
     });
   } catch (error) {
-    console.error('Create product error:', error);
+    console.error('❌ Create product error:', error);
     res.status(500).json({ 
       message: 'Server error',
       error: error.message 
@@ -413,11 +436,24 @@ router.put('/:id', [
   body('title').optional().trim().isLength({ min: 3, max: 100 }).withMessage('Title must be 3-100 characters'),
   body('description').optional().trim().isLength({ min: 10, max: 1000 }).withMessage('Description must be 10-1000 characters'),
   body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+  body('stock').optional().isInt({ min: 0 }).withMessage('Stock must be a positive integer'),
+  body('unit').optional().isString().withMessage('Unit must be a string'),
+  body('category').optional().isString().withMessage('Category must be a string'),
+  body('location').optional().isObject().withMessage('Location must be an object'),
+  body('categoryData').optional().isObject().withMessage('CategoryData must be an object'),
+  body('images').optional().isArray().withMessage('Images must be an array'),
   body('isAvailable').optional().isBoolean().withMessage('isAvailable must be a boolean')
 ], async (req, res) => {
   try {
+    console.log('🔄 Update product request:', {
+      productId: req.params.id,
+      userId: req.user._id,
+      body: req.body
+    });
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('❌ Validation errors:', errors.array());
       return res.status(400).json({
         message: 'Validation failed',
         errors: errors.array()
@@ -430,8 +466,11 @@ router.put('/:id', [
     });
 
     if (!product) {
+      console.log('❌ Product not found or not owned by user');
       return res.status(404).json({ message: 'Product not found' });
     }
+
+    console.log('✅ Product found, updating...');
 
     const updatedProduct = await Product.findByIdAndUpdate(
       req.params.id,
@@ -439,12 +478,58 @@ router.put('/:id', [
       { new: true, runValidators: true }
     ).populate('seller', 'name phone location sellerInfo profileImage');
 
+    console.log('✅ Product updated successfully');
+
     res.json({
       message: 'Product updated successfully',
       product: updatedProduct
     });
   } catch (error) {
-    console.error('Update product error:', error);
+    console.error('❌ Update product error:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    res.status(500).json({ 
+      message: 'Server error',
+      error: error.message 
+    });
+  }
+});
+
+// @route   GET /api/products/seller/count
+// @desc    Get seller's product count
+// @access  Private (Seller only)
+router.get('/seller/count', [auth, authorize('seller')], async (req, res) => {
+  try {
+    console.log('📊 Backend: Getting seller product count for user:', req.user._id);
+    
+    const totalProducts = await Product.countDocuments({ seller: req.user._id });
+    const activeProducts = await Product.countDocuments({ 
+      seller: req.user._id, 
+      isAvailable: true 
+    });
+    const pendingProducts = await Product.countDocuments({ 
+      seller: req.user._id, 
+      isApproved: false 
+    });
+    const approvedProducts = await Product.countDocuments({ 
+      seller: req.user._id, 
+      isApproved: true 
+    });
+
+    const result = {
+      total: totalProducts,
+      active: activeProducts,
+      pending: pendingProducts,
+      approved: approvedProducts
+    };
+    
+    console.log('📊 Backend: Product count result:', result);
+    res.json(result);
+  } catch (error) {
+    console.error('Get seller product count error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -521,11 +606,17 @@ router.get('/seller/my-products', [auth, authorize('seller')], async (req, res) 
     if (status === 'active') query.isAvailable = true;
     if (status === 'inactive') query.isAvailable = false;
 
+    console.log('📦 Backend: Getting seller products with query:', query);
+    console.log('📦 Backend: Status filter:', status);
+
     const products = await Product.find(query)
       .populate('seller', 'name phone location sellerInfo profileImage')
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
+
+    console.log('📦 Backend: Found products:', products.length);
+    console.log('📦 Backend: Products availability:', products.map(p => ({ id: p._id, isAvailable: p.isAvailable })));
 
     // Add favorites count to each product
     const productsWithFavoritesCount = products.map(product => ({

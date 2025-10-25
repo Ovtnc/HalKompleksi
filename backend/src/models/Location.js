@@ -23,6 +23,11 @@ const citySchema = new mongoose.Schema({
     unique: true,
     trim: true
   },
+  code: {
+    type: String,
+    required: false,
+    trim: true
+  },
   districts: [districtSchema],
   isActive: {
     type: Boolean,

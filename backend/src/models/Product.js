@@ -103,11 +103,21 @@ const productSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  isRejected: {
+    type: Boolean,
+    default: false
+  },
   approvedAt: Date,
   approvedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
-  }
+  },
+  rejectedAt: Date,
+  rejectedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  rejectionReason: String
 }, {
   timestamps: true
 });

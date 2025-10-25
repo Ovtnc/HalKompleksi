@@ -30,7 +30,8 @@ router.put('/profile', [
   body('location.address').optional().trim(),
   body('sellerInfo.companyName').optional().trim(),
   body('sellerInfo.taxNumber').optional().trim(),
-  body('sellerInfo.address').optional().trim()
+  body('sellerInfo.address').optional().trim(),
+  body('activeRole').optional().isIn(['buyer', 'seller']).withMessage('Active role must be buyer or seller')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -43,7 +44,9 @@ router.put('/profile', [
     }
 
     console.log('Profile update request:', req.body);
-    const { name, phone, location, sellerInfo } = req.body;
+    const { name, phone, location, sellerInfo, activeRole } = req.body;
+    
+    console.log('🔍 activeRole from request:', activeRole);
     
     // Fetch current user to merge updates
     const currentUser = await User.findById(req.user._id);
@@ -55,6 +58,10 @@ router.put('/profile', [
 
     if (name) updateData.name = name;
     if (phone) updateData.phone = phone;
+    if (activeRole) {
+      updateData.activeRole = activeRole;
+      console.log('🔍 Setting activeRole in updateData:', activeRole);
+    }
     
     // Merge location data
     if (location) {
@@ -80,11 +87,19 @@ router.put('/profile', [
       };
     }
 
+    console.log('🔍 Final updateData:', updateData);
+    
     const user = await User.findByIdAndUpdate(
       req.user._id,
       updateData,
       { new: true, runValidators: true }
     ).select('-password');
+
+    console.log('✅ User updated:', {
+      id: user._id,
+      activeRole: user.activeRole,
+      userType: user.userType
+    });
 
     res.json({
       message: 'Profile updated successfully',

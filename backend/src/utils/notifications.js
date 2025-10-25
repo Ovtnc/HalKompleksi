@@ -24,6 +24,7 @@ const createNotification = async (userId, type, title, message, productId = null
 
     await notification.save();
     console.log(`🔔 Notification created for user ${userId}: ${type} with productId: ${productId}`);
+    
     return notification;
   } catch (error) {
     console.error('🔔 Create notification error:', error);

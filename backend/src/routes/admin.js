@@ -2,6 +2,7 @@ const express = require('express');
 const { auth, adminOnly } = require('../middleware/auth');
 const Product = require('../models/Product');
 const User = require('../models/User');
+const MarketReport = require('../models/MarketReport');
 const fs = require('fs');
 const path = require('path');
 const { notifyProductApproved, notifyProductRejected, notifyProductFeatured, notifyMatchingBuyers } = require('../utils/notifications');
@@ -14,11 +15,15 @@ router.get('/dashboard', [auth, adminOnly], async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
     const totalProducts = await Product.countDocuments();
-    const pendingProducts = await Product.countDocuments({ isApproved: false });
+    const pendingProducts = await Product.countDocuments({ 
+      isApproved: false, 
+      isRejected: { $ne: true } 
+    });
     const approvedProducts = await Product.countDocuments({ isApproved: true });
     const activeUsers = await User.countDocuments({ isActive: true });
     const blockedUsers = await User.countDocuments({ isActive: false });
     const featuredProducts = await Product.countDocuments({ isFeatured: true });
+    const totalMarketReports = await MarketReport.countDocuments();
     
     // Calculate total views and favorites
     const allProducts = await Product.find().select('views favorites');
@@ -45,6 +50,7 @@ router.get('/dashboard', [auth, adminOnly], async (req, res) => {
         activeUsers,
         blockedUsers,
         featuredProducts,
+        totalMarketReports,
         totalViews,
         totalFavorites
       },
@@ -64,13 +70,19 @@ router.get('/products/pending', [auth, adminOnly], async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
     
-    const products = await Product.find({ isApproved: false })
+    const products = await Product.find({ 
+      isApproved: false, 
+      isRejected: { $ne: true } 
+    })
       .populate('seller', 'name email phone userType')
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
-    const total = await Product.countDocuments({ isApproved: false });
+    const total = await Product.countDocuments({ 
+      isApproved: false, 
+      isRejected: { $ne: true } 
+    });
 
     res.json({
       products,
@@ -80,6 +92,34 @@ router.get('/products/pending', [auth, adminOnly], async (req, res) => {
     });
   } catch (error) {
     console.error('Get pending products error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/admin/products/rejected
+// @desc    Get rejected products
+// @access  Private (Admin only)
+router.get('/products/rejected', [auth, adminOnly], async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    
+    const products = await Product.find({ isRejected: true })
+      .populate('seller', 'name email phone userType')
+      .populate('rejectedBy', 'name email')
+      .sort({ rejectedAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    const total = await Product.countDocuments({ isRejected: true });
+
+    res.json({
+      products,
+      totalPages: Math.ceil(total / limit),
+      currentPage: parseInt(page),
+      total
+    });
+  } catch (error) {
+    console.error('Get rejected products error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -126,32 +166,79 @@ router.put('/products/:id/approve', [auth, adminOnly], async (req, res) => {
 // @access  Private (Admin only)
 router.put('/products/:id/reject', [auth, adminOnly], async (req, res) => {
   try {
+    console.log('🚫 Admin: Rejecting product:', req.params.id);
+    console.log('🚫 Admin: Reject reason:', req.body.reason);
+    
     const { reason } = req.body;
     
     const product = await Product.findById(req.params.id);
     
     if (!product) {
+      console.log('❌ Admin: Product not found:', req.params.id);
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    // Remove approval and featured status
+    console.log('🚫 Admin: Found product:', product.title);
+    console.log('🚫 Admin: Current approval status:', product.isApproved);
+
+    // Mark as rejected
     product.isApproved = false;
+    product.isRejected = true;
     product.isFeatured = false; // Onaysız ürün öne çıkamaz
     product.rejectionReason = reason || 'Admin tarafından onay kaldırıldı';
     product.rejectedAt = new Date();
+    product.rejectedBy = req.user.id;
     
-    await product.save();
+    console.log('🚫 Admin: Updating product with rejection...');
+    console.log('🚫 Admin: Product before update:', {
+      isApproved: product.isApproved,
+      isRejected: product.isRejected,
+      rejectionReason: product.rejectionReason,
+      rejectedAt: product.rejectedAt,
+      rejectedBy: product.rejectedBy
+    });
+    
+    // Use updateOne instead of save() to ensure the update is applied
+    const updateResult = await Product.updateOne(
+      { _id: req.params.id },
+      {
+        $set: {
+          isApproved: false,
+          isRejected: true,
+          isFeatured: false,
+          rejectionReason: reason || 'Admin tarafından onay kaldırıldı',
+          rejectedAt: new Date(),
+          rejectedBy: req.user.id
+        }
+      }
+    );
+    
+    console.log('✅ Admin: Product updated successfully:', updateResult);
+    
+    // Fetch the updated product to verify
+    const updatedProduct = await Product.findById(req.params.id);
+    console.log('✅ Admin: Updated product:', {
+      isApproved: updatedProduct.isApproved,
+      isRejected: updatedProduct.isRejected,
+      rejectionReason: updatedProduct.rejectionReason,
+      rejectedAt: updatedProduct.rejectedAt,
+      rejectedBy: updatedProduct.rejectedBy
+    });
 
     // Notify seller about rejection
+    console.log('🔔 Admin: Sending rejection notification...');
     await notifyProductRejected(product.seller, product._id, product.title, reason);
+    console.log('✅ Admin: Rejection notification sent');
 
     res.json({
       message: 'Product approval removed',
       reason: reason || 'No reason provided'
     });
   } catch (error) {
-    console.error('Reject product error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('❌ Admin: Reject product error:', error);
+    console.error('❌ Admin: Error details:', error.message);
+    console.error('❌ Admin: Error stack:', error.stack);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -249,11 +336,41 @@ router.delete('/users/:id', [auth, adminOnly], async (req, res) => {
 // @access  Private (Admin only)
 router.get('/products', [auth, adminOnly], async (req, res) => {
   try {
-    const { page = 1, limit = 10, status } = req.query;
+    const { page = 1, limit = 10, status, search } = req.query;
     
-    const query = {};
-    if (status === 'approved') query.isApproved = true;
-    if (status === 'pending') query.isApproved = false;
+    // Base query - only show approved products by default
+    const query = {
+      isApproved: true,
+      isRejected: { $ne: true }
+    };
+    
+    // Override for pending products
+    if (status === 'pending') {
+      query.isApproved = false;
+      query.isRejected = { $ne: true };
+    }
+    
+    // Override for all products (admin can see all)
+    if (status === 'all') {
+      delete query.isApproved;
+      delete query.isRejected;
+    }
+
+    // Add search functionality
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), 'i');
+      query.$and = query.$and || [];
+      query.$and.push({
+        $or: [
+          { title: searchRegex },
+          { description: searchRegex },
+          { category: searchRegex },
+          { location: searchRegex }
+        ]
+      });
+    }
+
+    console.log('🔍 Admin: Products query:', { status, search, query });
 
     const products = await Product.find(query)
       .populate('seller', 'name email phone userType')
@@ -263,6 +380,8 @@ router.get('/products', [auth, adminOnly], async (req, res) => {
       .skip((page - 1) * limit);
 
     const total = await Product.countDocuments(query);
+
+    console.log('🔍 Admin: Found products:', products.length, 'Total:', total);
 
     res.json({
       products,

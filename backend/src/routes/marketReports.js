@@ -3,6 +3,18 @@ const router = express.Router();
 const { auth, adminOnly } = require('../middleware/auth');
 const MarketReport = require('../models/MarketReport');
 const { marketReportUpload } = require('../middleware/upload');
+const fs = require('fs');
+const path = require('path');
+
+// Helper function to fix image URLs
+const fixImageUrls = (reports) => {
+  return reports.map(report => {
+    if (report.image && report.image.url && !report.image.url.startsWith('http')) {
+      report.image.url = `http://localhost:5001${report.image.url}`;
+    }
+    return report;
+  });
+};
 
 // @route   GET /api/market-reports
 // @desc    Get all active market reports
@@ -24,8 +36,11 @@ router.get('/', async (req, res) => {
 
     const total = await MarketReport.countDocuments(query);
 
+    // Fix image URLs
+    const fixedReports = fixImageUrls(reports);
+
     res.json({
-      reports,
+      reports: fixedReports,
       total,
       page: parseInt(page),
       totalPages: Math.ceil(total / limit)
@@ -48,7 +63,10 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Piyasa raporu bulunamadı' });
     }
 
-    res.json(report);
+    // Fix image URL
+    const fixedReport = fixImageUrls([report])[0];
+
+    res.json(fixedReport);
   } catch (error) {
     console.error('Get market report error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -94,7 +112,7 @@ router.post('/', [auth, adminOnly, marketReportUpload.single('image')], async (r
     // Handle image upload
     if (req.file) {
       marketReport.image = {
-        url: `/uploads/market-reports/${req.file.filename}`,
+        url: `http://localhost:5001/uploads/market-reports/${req.file.filename}`,
         publicId: req.file.filename
       };
     }
@@ -156,7 +174,7 @@ router.put('/:id', [auth, adminOnly, marketReportUpload.single('image')], async 
       }
       
       report.image = {
-        url: `/uploads/market-reports/${req.file.filename}`,
+        url: `http://localhost:5001/uploads/market-reports/${req.file.filename}`,
         publicId: req.file.filename
       };
     }
@@ -214,6 +232,7 @@ router.delete('/:id', [auth, adminOnly], async (req, res) => {
 // @access  Private (Admin)
 router.get('/admin/all', [auth, adminOnly], async (req, res) => {
   try {
+    console.log('🔍 Admin market reports request:', req.query);
     const { city, isActive, limit = 50, page = 1 } = req.query;
     
     const query = {};
@@ -224,6 +243,8 @@ router.get('/admin/all', [auth, adminOnly], async (req, res) => {
       query.isActive = isActive === 'true';
     }
 
+    console.log('📊 Query:', query);
+
     const reports = await MarketReport.find(query)
       .populate('createdBy', 'name')
       .sort({ createdAt: -1 })
@@ -232,14 +253,19 @@ router.get('/admin/all', [auth, adminOnly], async (req, res) => {
 
     const total = await MarketReport.countDocuments(query);
 
+    console.log('📈 Found reports:', reports.length, 'Total:', total);
+
+    // Fix image URLs
+    const fixedReports = fixImageUrls(reports);
+
     res.json({
-      reports,
+      reports: fixedReports,
       total,
       page: parseInt(page),
       totalPages: Math.ceil(total / limit)
     });
   } catch (error) {
-    console.error('Get admin market reports error:', error);
+    console.error('❌ Get admin market reports error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });

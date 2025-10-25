@@ -7,6 +7,12 @@ const categorySchema = new mongoose.Schema({
     unique: true,
     trim: true
   },
+  slug: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
   icon: {
     type: String,
     default: 'leaf'

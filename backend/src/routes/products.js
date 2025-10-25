@@ -242,16 +242,16 @@ router.get('/search', async (req, res) => {
 // @access  Public
 router.get('/categories', (req, res) => {
   const categories = [
-    { id: 'meyve', name: 'Meyve', icon: 'nutrition' },
-    { id: 'sebze', name: 'Sebze', icon: 'leaf' },
-    { id: 'gida', name: 'Gıda', icon: 'restaurant' },
-    { id: 'nakliye', name: 'Nakliye', icon: 'car' },
-    { id: 'kasa', name: 'Kasa', icon: 'cube' },
-    { id: 'zirai_ilac', name: 'Zirai İlaç', icon: 'medical' },
-    { id: 'ambalaj', name: 'Ambalaj', icon: 'archive' },
-    { id: 'indir_bindir', name: 'İndir-Bindir', icon: 'people' },
-    { id: 'emlak', name: 'Emlak', icon: 'home' },
-    { id: 'arac', name: 'Araç', icon: 'car-sport' }
+    { id: 'meyve', name: 'Meyve', icon: 'leaf', color: '#2ECC71' },
+    { id: 'sebze', name: 'Sebze', icon: 'nutrition', color: '#27AE60' },
+    { id: 'gida', name: 'Gıda', icon: 'restaurant', color: '#E67E22' },
+    { id: 'nakliye', name: 'Nakliye', icon: 'car', color: '#3498DB' },
+    { id: 'kasa', name: 'Kasa', icon: 'cube', color: '#9B59B6' },
+    { id: 'zirai_ilac', name: 'Zirai İlaç', icon: 'medical', color: '#E74C3C' },
+    { id: 'ambalaj', name: 'Ambalaj', icon: 'archive', color: '#1ABC9C' },
+    { id: 'indir_bindir', name: 'İndir-Bindir', icon: 'people', color: '#F39C12' },
+    { id: 'emlak', name: 'Emlak', icon: 'home', color: '#8E44AD' },
+    { id: 'arac', name: 'Araç', icon: 'car-sport', color: '#34495E' }
   ];
 
   res.json({ categories });

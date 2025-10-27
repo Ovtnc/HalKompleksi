@@ -34,7 +34,7 @@ router.get('/', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Get orders error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -65,7 +65,7 @@ router.get('/seller', [auth, authorize('seller')], async (req, res) => {
     });
   } catch (error) {
     console.error('Get seller orders error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -141,7 +141,7 @@ router.post('/', [
     });
   } catch (error) {
     console.error('Create order error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -202,7 +202,7 @@ router.put('/:id/status', [
     });
   } catch (error) {
     console.error('Update order status error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -229,7 +229,7 @@ router.get('/:id', auth, async (req, res) => {
     res.json({ order });
   } catch (error) {
     console.error('Get order error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -269,7 +269,7 @@ router.delete('/:id', auth, async (req, res) => {
     res.json({ message: 'Order cancelled successfully' });
   } catch (error) {
     console.error('Cancel order error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 

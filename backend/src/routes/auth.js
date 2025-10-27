@@ -19,17 +19,17 @@ const generateToken = (id) => {
 // @desc    Register user
 // @access  Public
 router.post('/register', [
-  body('name').trim().isLength({ min: 2, max: 50 }).withMessage('Name must be 2-50 characters'),
-  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-  body('phone').matches(/^[\+]?[0-9]{10,16}$/).withMessage('Please provide a valid phone number'),
-  body('userType').isIn(['buyer', 'seller', 'admin']).withMessage('User type must be buyer, seller, or admin')
+  body('name').trim().isLength({ min: 2, max: 50 }).withMessage('İsim 2-50 karakter arasında olmalıdır'),
+  body('email').isEmail().normalizeEmail().withMessage('Lütfen geçerli bir e-posta adresi girin'),
+  body('password').isLength({ min: 6 }).withMessage('Şifre en az 6 karakter olmalıdır'),
+  body('phone').matches(/^[\+]?[0-9]{10,16}$/).withMessage('Lütfen geçerli bir telefon numarası girin'),
+  body('userType').isIn(['buyer', 'seller', 'admin']).withMessage('Kullanıcı tipi alıcı, satıcı veya admin olmalıdır')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
-        message: 'Validation failed',
+        message: 'Doğrulama başarısız',
         errors: errors.array()
       });
     }
@@ -40,7 +40,7 @@ router.post('/register', [
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
-        message: 'User already exists with this email'
+        message: 'Bu e-posta adresi ile zaten bir kullanıcı mevcut'
       });
     }
 
@@ -66,7 +66,7 @@ router.post('/register', [
     }
 
     res.status(201).json({
-      message: 'User registered successfully',
+      message: 'Kullanıcı başarıyla kaydedildi',
       token,
       user: {
         id: user._id,
@@ -84,7 +84,7 @@ router.post('/register', [
   } catch (error) {
     console.error('Register error:', error);
     res.status(500).json({
-      message: 'Server error during registration'
+      message: 'Kayıt sırasında sunucu hatası'
     });
   }
 });
@@ -93,14 +93,14 @@ router.post('/register', [
 // @desc    Login user
 // @access  Public
 router.post('/login', [
-  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
-  body('password').notEmpty().withMessage('Password is required')
+  body('email').isEmail().normalizeEmail().withMessage('Lütfen geçerli bir e-posta adresi girin'),
+  body('password').notEmpty().withMessage('Şifre gereklidir')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
-        message: 'Validation failed',
+        message: 'Doğrulama başarısız',
         errors: errors.array()
       });
     }
@@ -111,7 +111,7 @@ router.post('/login', [
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({
-        message: 'Invalid credentials'
+        message: 'Geçersiz kimlik bilgileri'
       });
     }
 
@@ -119,21 +119,21 @@ router.post('/login', [
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(400).json({
-        message: 'Invalid credentials'
+        message: 'Geçersiz kimlik bilgileri'
       });
     }
 
     // Check if account is active
     if (!user.isActive) {
       return res.status(400).json({
-        message: 'Account is deactivated'
+        message: 'Hesap deaktif edilmiş'
       });
     }
 
     const token = generateToken(user._id);
 
     res.json({
-      message: 'Login successful',
+      message: 'Giriş başarılı',
       token,
       user: {
         id: user._id,
@@ -151,7 +151,7 @@ router.post('/login', [
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
-      message: 'Server error during login'
+      message: 'Giriş sırasında sunucu hatası'
     });
   }
 });
@@ -180,7 +180,7 @@ router.get('/me', auth, async (req, res) => {
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({
-      message: 'Server error'
+      message: 'Sunucu hatası'
     });
   }
 });
@@ -190,7 +190,7 @@ router.get('/me', auth, async (req, res) => {
 // @access  Private
 router.post('/logout', auth, (req, res) => {
   res.json({
-    message: 'Logout successful'
+    message: 'Çıkış başarılı'
   });
 });
 
@@ -198,13 +198,13 @@ router.post('/logout', auth, (req, res) => {
 // @desc    Send password reset email
 // @access  Public
 router.post('/forgot-password', [
-  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email')
+  body('email').isEmail().normalizeEmail().withMessage('Lütfen geçerli bir e-posta adresi girin')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
-        message: 'Validation failed',
+        message: 'Doğrulama başarısız',
         errors: errors.array()
       });
     }
@@ -215,7 +215,7 @@ router.post('/forgot-password', [
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({
-        message: 'User not found with this email address'
+        message: 'Bu e-posta adresi ile kullanıcı bulunamadı'
       });
     }
 
@@ -233,25 +233,25 @@ router.post('/forgot-password', [
       const emailResult = await sendPasswordResetEmail(email, resetToken);
       if (emailResult.success) {
         res.json({
-          message: 'Password reset token sent to your email'
+          message: 'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi'
         });
       } else {
         console.error('Email sending failed:', emailResult.error);
         res.status(500).json({
-          message: 'Failed to send reset email. Please try again later.'
+          message: 'Sıfırlama e-postası gönderilemedi. Lütfen daha sonra tekrar deneyin.'
         });
       }
     } catch (emailError) {
       console.error('Email sending error:', emailError);
       res.status(500).json({
-        message: 'Failed to send reset email. Please try again later.'
+        message: 'Sıfırlama e-postası gönderilemedi. Lütfen daha sonra tekrar deneyin.'
       });
     }
 
   } catch (error) {
     console.error('Forgot password error:', error);
     res.status(500).json({
-      message: 'Server error'
+      message: 'Sunucu hatası'
     });
   }
 });
@@ -260,14 +260,14 @@ router.post('/forgot-password', [
 // @desc    Reset password with token
 // @access  Public
 router.post('/reset-password', [
-  body('token').notEmpty().withMessage('Reset token is required'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+  body('token').notEmpty().withMessage('Sıfırlama anahtarı gereklidir'),
+  body('password').isLength({ min: 6 }).withMessage('Şifre en az 6 karakter olmalıdır')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
-        message: 'Validation failed',
+        message: 'Doğrulama başarısız',
         errors: errors.array()
       });
     }
@@ -282,7 +282,7 @@ router.post('/reset-password', [
 
     if (!user) {
       return res.status(400).json({
-        message: 'Invalid or expired reset token'
+        message: 'Geçersiz veya süresi dolmuş sıfırlama anahtarı'
       });
     }
 
@@ -295,13 +295,13 @@ router.post('/reset-password', [
     await user.save();
 
     res.json({
-      message: 'Password reset successful'
+      message: 'Şifre sıfırlama başarılı'
     });
 
   } catch (error) {
     console.error('Reset password error:', error);
     res.status(500).json({
-      message: 'Server error'
+      message: 'Sunucu hatası'
     });
   }
 });

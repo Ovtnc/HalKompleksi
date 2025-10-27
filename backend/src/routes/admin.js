@@ -59,7 +59,7 @@ router.get('/dashboard', [auth, adminOnly], async (req, res) => {
     });
   } catch (error) {
     console.error('Admin dashboard error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -92,7 +92,7 @@ router.get('/products/pending', [auth, adminOnly], async (req, res) => {
     });
   } catch (error) {
     console.error('Get pending products error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -120,7 +120,7 @@ router.get('/products/rejected', [auth, adminOnly], async (req, res) => {
     });
   } catch (error) {
     console.error('Get rejected products error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -132,7 +132,7 @@ router.put('/products/:id/approve', [auth, adminOnly], async (req, res) => {
     const product = await Product.findById(req.params.id);
     
     if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
+      return res.status(404).json({ message: 'Ürün bulunamadı' });
     }
 
     product.isApproved = true;
@@ -157,7 +157,7 @@ router.put('/products/:id/approve', [auth, adminOnly], async (req, res) => {
     });
   } catch (error) {
     console.error('Approve product error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -175,7 +175,7 @@ router.put('/products/:id/reject', [auth, adminOnly], async (req, res) => {
     
     if (!product) {
       console.log('❌ Admin: Product not found:', req.params.id);
-      return res.status(404).json({ message: 'Product not found' });
+      return res.status(404).json({ message: 'Ürün bulunamadı' });
     }
 
     console.log('🚫 Admin: Found product:', product.title);
@@ -269,7 +269,7 @@ router.get('/users', [auth, adminOnly], async (req, res) => {
     });
   } catch (error) {
     console.error('Get users error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -283,7 +283,7 @@ router.put('/users/:id/block', [auth, adminOnly], async (req, res) => {
     const user = await User.findById(req.params.id);
     
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
     }
 
     user.isActive = isActive;
@@ -301,7 +301,7 @@ router.put('/users/:id/block', [auth, adminOnly], async (req, res) => {
     });
   } catch (error) {
     console.error('Block user error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -313,7 +313,7 @@ router.delete('/users/:id', [auth, adminOnly], async (req, res) => {
     const user = await User.findById(req.params.id);
     
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
     }
 
     // Delete user's products first
@@ -327,7 +327,7 @@ router.delete('/users/:id', [auth, adminOnly], async (req, res) => {
     });
   } catch (error) {
     console.error('Delete user error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -391,7 +391,7 @@ router.get('/products', [auth, adminOnly], async (req, res) => {
     });
   } catch (error) {
     console.error('Get admin products error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -403,7 +403,7 @@ router.delete('/products/:id', [auth, adminOnly], async (req, res) => {
     const product = await Product.findById(req.params.id);
     
     if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
+      return res.status(404).json({ message: 'Ürün bulunamadı' });
     }
 
     // Delete associated images from filesystem
@@ -444,7 +444,7 @@ router.delete('/products/:id', [auth, adminOnly], async (req, res) => {
     });
   } catch (error) {
     console.error('Delete product error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -456,7 +456,7 @@ router.put('/products/:id/featured', [auth, adminOnly], async (req, res) => {
     const product = await Product.findById(req.params.id);
     
     if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
+      return res.status(404).json({ message: 'Ürün bulunamadı' });
     }
 
     // Toggle featured status
@@ -475,7 +475,7 @@ router.put('/products/:id/featured', [auth, adminOnly], async (req, res) => {
     });
   } catch (error) {
     console.error('Toggle featured error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -493,7 +493,7 @@ router.get('/products/featured', [auth, adminOnly], async (req, res) => {
     });
   } catch (error) {
     console.error('Get featured products error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -526,7 +526,7 @@ router.get('/users/search', [auth, adminOnly], async (req, res) => {
     });
   } catch (error) {
     console.error('Search users error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -562,7 +562,7 @@ router.get('/users/:userId/products', [auth, adminOnly], async (req, res) => {
     });
   } catch (error) {
     console.error('Get user products error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 

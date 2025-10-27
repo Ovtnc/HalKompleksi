@@ -10,7 +10,7 @@ const path = require('path');
 const fixImageUrls = (reports) => {
   return reports.map(report => {
     if (report.image && report.image.url && !report.image.url.startsWith('http')) {
-      report.image.url = `http://localhost:5001${report.image.url}`;
+      report.image.url = `http://109.199.114.223:5001${report.image.url}`;
     }
     return report;
   });
@@ -47,7 +47,7 @@ router.get('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Get market reports error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
   }
 });
 
@@ -69,7 +69,7 @@ router.get('/:id', async (req, res) => {
     res.json(fixedReport);
   } catch (error) {
     console.error('Get market report error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
   }
 });
 
@@ -112,7 +112,7 @@ router.post('/', [auth, adminOnly, marketReportUpload.single('image')], async (r
     // Handle image upload
     if (req.file) {
       marketReport.image = {
-        url: `http://localhost:5001/uploads/market-reports/${req.file.filename}`,
+        url: `http://109.199.114.223:5001/uploads/market-reports/${req.file.filename}`,
         publicId: req.file.filename
       };
     }
@@ -130,7 +130,7 @@ router.post('/', [auth, adminOnly, marketReportUpload.single('image')], async (r
     res.status(201).json(marketReport);
   } catch (error) {
     console.error('Create market report error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
   }
 });
 
@@ -174,7 +174,7 @@ router.put('/:id', [auth, adminOnly, marketReportUpload.single('image')], async 
       }
       
       report.image = {
-        url: `http://localhost:5001/uploads/market-reports/${req.file.filename}`,
+        url: `http://109.199.114.223:5001/uploads/market-reports/${req.file.filename}`,
         publicId: req.file.filename
       };
     }
@@ -191,7 +191,7 @@ router.put('/:id', [auth, adminOnly, marketReportUpload.single('image')], async 
     res.json(report);
   } catch (error) {
     console.error('Update market report error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
   }
 });
 
@@ -223,7 +223,7 @@ router.delete('/:id', [auth, adminOnly], async (req, res) => {
     res.json({ message: 'Piyasa raporu silindi' });
   } catch (error) {
     console.error('Delete market report error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
   }
 });
 
@@ -266,7 +266,7 @@ router.get('/admin/all', [auth, adminOnly], async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Get admin market reports error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
   }
 });
 
@@ -279,7 +279,7 @@ router.get('/cities/list', async (req, res) => {
     res.json({ cities: cities.sort() });
   } catch (error) {
     console.error('Get cities error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
   }
 });
 

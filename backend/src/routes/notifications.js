@@ -38,7 +38,7 @@ router.get('/', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Get notifications error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -62,7 +62,7 @@ router.put('/:id/read', auth, async (req, res) => {
     res.json({ message: 'Notification marked as read' });
   } catch (error) {
     console.error('Mark notification as read error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -79,7 +79,7 @@ router.put('/read-all', auth, async (req, res) => {
     res.json({ message: 'All notifications marked as read' });
   } catch (error) {
     console.error('Mark all notifications as read error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -100,7 +100,7 @@ router.delete('/:id', auth, async (req, res) => {
     res.json({ message: 'Notification deleted' });
   } catch (error) {
     console.error('Delete notification error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -148,7 +148,7 @@ router.post('/product-request', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Create product request error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -165,7 +165,7 @@ router.get('/product-requests', auth, async (req, res) => {
     res.json({ requests });
   } catch (error) {
     console.error('Get product requests error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -186,7 +186,7 @@ router.delete('/product-requests/:id', auth, async (req, res) => {
     res.json({ message: 'Product request deleted' });
   } catch (error) {
     console.error('Delete product request error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -286,7 +286,7 @@ router.get('/request-products/:requestId', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Get request products error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -341,7 +341,7 @@ router.get('/grouped-products', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Get grouped products error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 

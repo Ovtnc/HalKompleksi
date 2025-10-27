@@ -4,30 +4,30 @@ const bcrypt = require('bcryptjs');
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'Name is required'],
+    required: [true, 'İsim gereklidir'],
     trim: true,
-    maxlength: [50, 'Name cannot be more than 50 characters']
+    maxlength: [50, 'İsim 50 karakterden fazla olamaz']
   },
   email: {
     type: String,
-    required: [true, 'Email is required'],
+    required: [true, 'E-posta gereklidir'],
     lowercase: true,
-    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
+    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Lütfen geçerli bir e-posta adresi girin']
   },
   password: {
     type: String,
-    required: [true, 'Password is required'],
-    minlength: [6, 'Password must be at least 6 characters']
+    required: [true, 'Şifre gereklidir'],
+    minlength: [6, 'Şifre en az 6 karakter olmalıdır']
   },
   phone: {
     type: String,
-    required: [true, 'Phone number is required'],
-    match: [/^[\+]?[0-9]{10,16}$/, 'Please enter a valid phone number']
+    required: [true, 'Telefon numarası gereklidir'],
+    match: [/^[\+]?[0-9]{10,16}$/, 'Lütfen geçerli bir telefon numarası girin']
   },
   userType: {
     type: String,
     enum: ['buyer', 'seller', 'admin'],
-    required: [true, 'User type is required']
+    required: [true, 'Kullanıcı tipi gereklidir']
   },
   userRoles: [{
     type: String,

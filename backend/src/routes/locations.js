@@ -69,7 +69,7 @@ router.get('/cities', async (req, res) => {
     res.json({ cities, total: cities.length });
   } catch (error) {
     console.error('Error fetching cities:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
   }
 });
 
@@ -98,7 +98,7 @@ router.get('/cities/:cityId/districts', async (req, res) => {
     res.json({ districts, total: districts.length });
   } catch (error) {
     console.error('❌ Error fetching districts:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
   }
 });
 

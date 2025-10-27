@@ -233,7 +233,7 @@ router.get('/search', async (req, res) => {
     res.json({ products: fixedProducts, total: products.length });
   } catch (error) {
     console.error('Search products error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
   }
 });
 

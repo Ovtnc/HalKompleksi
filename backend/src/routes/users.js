@@ -5,16 +5,32 @@ const { auth, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Helper function to fix profile image URLs
+const fixProfileImageUrl = (user) => {
+  if (user && user.profileImage) {
+    // If it's a file:// URL, replace with placeholder
+    if (user.profileImage.startsWith('file://')) {
+      user.profileImage = 'https://via.placeholder.com/100x100?text=Profile';
+    }
+    // If it's a relative path, make it absolute
+    else if (user.profileImage.startsWith('/uploads/')) {
+      user.profileImage = `http://109.199.114.223:5001${user.profileImage}`;
+    }
+  }
+  return user;
+};
+
 // @route   GET /api/users/profile
 // @desc    Get user profile
 // @access  Private
 router.get('/profile', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
-    res.json({ user });
+    const fixedUser = fixProfileImageUrl(user);
+    res.json({ user: fixedUser });
   } catch (error) {
     console.error('Get profile error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -23,7 +39,7 @@ router.get('/profile', auth, async (req, res) => {
 // @access  Private
 router.put('/profile', [
   auth,
-  body('name').optional().trim().isLength({ min: 2, max: 50 }).withMessage('Name must be 2-50 characters'),
+  body('name').optional().trim().isLength({ min: 2, max: 50 }).withMessage('İsim 2-50 karakter arasında olmalıdır'),
   body('phone').optional().trim(),
   body('location.city').optional().trim(),
   body('location.district').optional().trim(),
@@ -31,14 +47,14 @@ router.put('/profile', [
   body('sellerInfo.companyName').optional().trim(),
   body('sellerInfo.taxNumber').optional().trim(),
   body('sellerInfo.address').optional().trim(),
-  body('activeRole').optional().isIn(['buyer', 'seller']).withMessage('Active role must be buyer or seller')
+  body('activeRole').optional().isIn(['buyer', 'seller']).withMessage('Aktif rol alıcı veya satıcı olmalıdır')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       console.error('Validation errors:', errors.array());
       return res.status(400).json({
-        message: 'Validation failed',
+        message: 'Doğrulama başarısız',
         errors: errors.array()
       });
     }
@@ -51,7 +67,7 @@ router.put('/profile', [
     // Fetch current user to merge updates
     const currentUser = await User.findById(req.user._id);
     if (!currentUser) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
     }
 
     const updateData = {};
@@ -95,19 +111,21 @@ router.put('/profile', [
       { new: true, runValidators: true }
     ).select('-password');
 
+    const fixedUser = fixProfileImageUrl(user);
+
     console.log('✅ User updated:', {
-      id: user._id,
-      activeRole: user.activeRole,
-      userType: user.userType
+      id: fixedUser._id,
+      activeRole: fixedUser.activeRole,
+      userType: fixedUser.userType
     });
 
     res.json({
-      message: 'Profile updated successfully',
-      user
+        message: 'Profil başarıyla güncellendi',
+      user: fixedUser
     });
   } catch (error) {
     console.error('Update profile error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -116,7 +134,7 @@ router.put('/profile', [
 // @access  Private
 router.put('/profile-image', [
   auth,
-  body('profileImage').notEmpty().withMessage('Profile image URL is required')
+  body('profileImage').notEmpty().withMessage('Profil resmi URL\'si gereklidir')
 ], async (req, res) => {
   try {
     console.log('Profile image update request:', req.body);
@@ -124,7 +142,7 @@ router.put('/profile-image', [
     if (!errors.isEmpty()) {
       console.log('Validation errors:', errors.array());
       return res.status(400).json({
-        message: 'Validation failed',
+        message: 'Doğrulama başarısız',
         errors: errors.array()
       });
     }
@@ -138,13 +156,15 @@ router.put('/profile-image', [
       { new: true }
     ).select('-password');
 
+    const fixedUser = fixProfileImageUrl(user);
+
     res.json({
-      message: 'Profile image updated successfully',
-      user
+        message: 'Profil resmi başarıyla güncellendi',
+      user: fixedUser
     });
   } catch (error) {
     console.error('Update profile image error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -175,7 +195,7 @@ router.get('/sellers', async (req, res) => {
     });
   } catch (error) {
     console.error('Get sellers error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -197,7 +217,7 @@ router.get('/sellers/:id', async (req, res) => {
     res.json({ seller });
   } catch (error) {
     console.error('Get seller error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -212,7 +232,7 @@ router.post('/switch-role', [
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
-        message: 'Validation failed',
+        message: 'Doğrulama başarısız',
         errors: errors.array()
       });
     }
@@ -222,7 +242,7 @@ router.post('/switch-role', [
     // Check if user has this role
     const user = await User.findById(req.user._id);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
     }
 
     // Add role to userRoles if not already present
@@ -253,7 +273,7 @@ router.post('/switch-role', [
     });
   } catch (error) {
     console.error('Switch role error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 
@@ -266,7 +286,7 @@ router.delete('/account', auth, async (req, res) => {
     res.json({ message: 'Account deactivated successfully' });
   } catch (error) {
     console.error('Delete account error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
 

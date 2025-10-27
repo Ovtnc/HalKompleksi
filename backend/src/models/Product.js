@@ -3,19 +3,19 @@ const mongoose = require('mongoose');
 const productSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: [true, 'Product title is required'],
+    required: [true, 'Ürün başlığı gereklidir'],
     trim: true,
-    maxlength: [100, 'Title cannot be more than 100 characters']
+    maxlength: [100, 'Başlık 100 karakterden fazla olamaz']
   },
   description: {
     type: String,
-    required: [true, 'Product description is required'],
-    maxlength: [1000, 'Description cannot be more than 1000 characters']
+    required: [true, 'Ürün açıklaması gereklidir'],
+    maxlength: [1000, 'Açıklama 1000 karakterden fazla olamaz']
   },
   price: {
     type: Number,
-    required: [true, 'Price is required'],
-    min: [0, 'Price cannot be negative']
+    required: [true, 'Fiyat gereklidir'],
+    min: [0, 'Fiyat negatif olamaz']
   },
   currency: {
     type: String,
@@ -24,7 +24,7 @@ const productSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    required: [true, 'Category is required'],
+    required: [true, 'Kategori gereklidir'],
     enum: ['meyve', 'sebze', 'nakliye', 'kasa', 'zirai_ilac', 'ambalaj', 'indir_bindir', 'emlak', 'arac', 'gida', 'baharat', 'diger']
   },
   images: [{
@@ -46,12 +46,12 @@ const productSchema = new mongoose.Schema({
   seller: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'Seller is required']
+    required: [true, 'Satıcı gereklidir']
   },
   location: {
     city: {
       type: String,
-      required: [true, 'City is required']
+      required: [true, 'Şehir gereklidir']
     },
     district: String,
     address: String
@@ -63,11 +63,11 @@ const productSchema = new mongoose.Schema({
   stock: {
     type: Number,
     default: 1,
-    min: [0, 'Stock cannot be negative']
+    min: [0, 'Stok negatif olamaz']
   },
   unit: {
     type: String,
-    enum: ['kg', 'adet', 'paket', 'litre', 'gram', 'ton', 'kasa', 'km', 'gün', 'kişi', 'saat', 'rol', 'kutu', 'metre', 'm²'],
+    enum: ['kg', 'adet', 'paket', 'litre', 'gram', 'ton', 'kasa', 'km', 'gün', 'kişi', 'saat', 'rol', 'kutu', 'metre', 'm²', 'şişe', 'teneke', 'takım'],
     default: 'kg'
   },
   categoryData: {

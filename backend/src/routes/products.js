@@ -118,7 +118,7 @@ router.get('/', async (req, res) => {
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
-    const total = await Product.countDocuments(query);
+    const total = await Product.countDocuments(mongoQuery);
 
     // Fix image URLs
     const fixedProducts = fixImageUrls(products);
@@ -244,7 +244,7 @@ router.get('/categories', (req, res) => {
   const categories = [
     { id: 'meyve', name: 'Meyve', icon: 'leaf', color: '#2ECC71' },
     { id: 'sebze', name: 'Sebze', icon: 'nutrition', color: '#27AE60' },
-    { id: 'gida', name: 'Gıda', icon: 'restaurant', color: '#E67E22' },
+    { id: 'gida', name: 'Gıda', icon: 'basket', color: '#E67E22' },
     { id: 'nakliye', name: 'Nakliye', icon: 'car', color: '#3498DB' },
     { id: 'kasa', name: 'Kasa', icon: 'cube', color: '#9B59B6' },
     { id: 'zirai_ilac', name: 'Zirai İlaç', icon: 'medical', color: '#E74C3C' },
@@ -600,6 +600,12 @@ router.delete('/:id/favorite', auth, async (req, res) => {
 // @access  Private (Seller only)
 router.get('/seller/my-products', [auth, authorize('seller')], async (req, res) => {
   try {
+    console.log('📦 Backend: My products request received');
+    console.log('📦 Backend: User ID:', req.user._id);
+    console.log('📦 Backend: User type:', req.user.userType);
+    console.log('📦 Backend: User roles:', req.user.userRoles);
+    console.log('📦 Backend: Active role:', req.user.activeRole);
+    
     const { page = 1, limit = 10, status } = req.query;
     const query = { seller: req.user._id };
 

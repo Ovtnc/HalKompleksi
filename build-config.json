@@ -1,0 +1,69 @@
+{
+  "project": {
+    "name": "Hal Kompleksi",
+    "version": "1.0.0",
+    "description": "Modern marketplace app for farmers and buyers",
+    "author": "Hal Kompleksi Team"
+  },
+  "build": {
+    "android": {
+      "minSdkVersion": 21,
+      "targetSdkVersion": 34,
+      "compileSdkVersion": 34,
+      "buildToolsVersion": "34.0.0",
+      "architectures": ["arm64-v8a", "armeabi-v7a"],
+      "optimizations": {
+        "minifyEnabled": true,
+        "shrinkResources": true,
+        "proguardOptimization": true,
+        "r8Optimization": true,
+        "bundleCompression": true
+      }
+    },
+    "ios": {
+      "deploymentTarget": "12.0",
+      "architectures": ["arm64"],
+      "optimizations": {
+        "bitcodeEnabled": false,
+        "optimizationLevel": "fastest",
+        "stripDebugSymbols": true,
+        "deadCodeStripping": true
+      }
+    }
+  },
+  "performance": {
+    "bundleSize": {
+      "maxSize": "50MB",
+      "targetSize": "30MB",
+      "compression": "gzip"
+    },
+    "memory": {
+      "maxHeapSize": "512MB",
+      "gcOptimization": true
+    },
+    "network": {
+      "timeout": 10000,
+      "retries": 3,
+      "cacheEnabled": true,
+      "compression": true
+    }
+  },
+  "assets": {
+    "images": {
+      "formats": ["webp", "avif", "png", "jpg"],
+      "quality": 80,
+      "maxWidth": 2048,
+      "maxHeight": 2048
+    },
+    "icons": {
+      "sizes": [16, 24, 32, 48, 64, 96, 128, 256, 512],
+      "formats": ["png", "svg"]
+    }
+  },
+  "monitoring": {
+    "crashlytics": true,
+    "analytics": true,
+    "performance": true,
+    "bundleAnalysis": true
+  }
+}

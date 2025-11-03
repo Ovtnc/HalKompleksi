@@ -25,7 +25,7 @@ import Animated, {
   withSpring,
   runOnJS
 } from 'react-native-reanimated';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { VideoView, useVideoPlayer } from 'expo-video';
@@ -49,6 +49,94 @@ const COLORS = {
   border: '#E0E0E0',
   whatsapp: '#25D366',
   error: '#F44336',
+};
+
+// Kategori-spesifik alanlar tanımları
+const categoryFields: Record<string, any> = {
+  meyve: {
+    fields: [
+      { key: 'variety', label: 'Çeşit', icon: 'leaf' },
+      { key: 'harvest', label: 'Hasat Tarihi', icon: 'calendar', isDate: true },
+      { key: 'organic', label: 'Organik', icon: 'leaf', isBoolean: true },
+      { key: 'coldStorage', label: 'Soğuk Hava Deposu', icon: 'snow', isBoolean: true },
+    ]
+  },
+  sebze: {
+    fields: [
+      { key: 'variety', label: 'Çeşit', icon: 'leaf' },
+      { key: 'harvest', label: 'Hasat Tarihi', icon: 'calendar', isDate: true },
+      { key: 'organic', label: 'Organik', icon: 'leaf', isBoolean: true },
+      { key: 'coldStorage', label: 'Soğuk Hava Deposu', icon: 'snow', isBoolean: true },
+    ]
+  },
+  gida: {
+    fields: [
+      { key: 'productType', label: 'Gıda Tipi', icon: 'fast-food' },
+      { key: 'productionDate', label: 'Üretim Tarihi', icon: 'calendar', isDate: true },
+      { key: 'brand', label: 'Marka', icon: 'pricetag' },
+      { key: 'expiryDate', label: 'Son Kullanma Tarihi', icon: 'time', isDate: true },
+    ]
+  },
+  nakliye: {
+    fields: [
+      { key: 'vehicleType', label: 'Araç Tipi', icon: 'car' },
+      { key: 'capacity', label: 'Kapasite (Ton)', icon: 'cube' },
+      { key: 'route', label: 'Güzergah', icon: 'navigate' },
+      { key: 'availability', label: 'Müsaitlik', icon: 'time' },
+    ]
+  },
+  kasa: {
+    fields: [
+      { key: 'material', label: 'Malzeme', icon: 'cube' },
+      { key: 'size', label: 'Boyut', icon: 'resize' },
+      { key: 'condition', label: 'Durum', icon: 'checkmark-circle' },
+    ]
+  },
+  zirai_ilac: {
+    fields: [
+      { key: 'brand', label: 'Marka', icon: 'pricetag' },
+      { key: 'productName', label: 'İlaç Adı', icon: 'medical' },
+    ]
+  },
+  ambalaj: {
+    fields: [
+      { key: 'material', label: 'Malzeme', icon: 'cube' },
+      { key: 'size', label: 'Boyut', icon: 'resize' },
+      { key: 'color', label: 'Renk', icon: 'color-palette' },
+      { key: 'quality', label: 'Kalite', icon: 'star' },
+    ]
+  },
+  indir_bindir: {
+    fields: [
+      { key: 'workerCount', label: 'İşçi Sayısı', icon: 'people' },
+      { key: 'experience', label: 'Deneyim', icon: 'trophy' },
+      { key: 'equipment', label: 'Ekipman', icon: 'construct' },
+      { key: 'availability', label: 'Müsaitlik', icon: 'time' },
+    ]
+  },
+  emlak: {
+    fields: [
+      { key: 'propertyType', label: 'Emlak Tipi', icon: 'home' },
+      { key: 'area', label: 'Alan (m²)', icon: 'resize' },
+      { key: 'floor', label: 'Kat', icon: 'layers' },
+      { key: 'rooms', label: 'Oda Sayısı', icon: 'grid' },
+      { key: 'age', label: 'Bina Yaşı', icon: 'time' },
+      { key: 'heating', label: 'Isıtma', icon: 'flame' },
+      { key: 'rentalType', label: 'İlan Tipi', icon: 'pricetag' },
+    ]
+  },
+  arac: {
+    fields: [
+      { key: 'brand', label: 'Marka', icon: 'car' },
+      { key: 'model', label: 'Model', icon: 'car-sport' },
+      { key: 'year', label: 'Model Yılı', icon: 'calendar' },
+      { key: 'km', label: 'Kilometre', icon: 'speedometer' },
+      { key: 'fuelType', label: 'Yakıt Tipi', icon: 'water' },
+      { key: 'transmission', label: 'Vites', icon: 'settings' },
+      { key: 'condition', label: 'Durum', icon: 'checkmark-circle' },
+      { key: 'rentalType', label: 'İlan Tipi', icon: 'pricetag' },
+    ]
+  },
 };
 
 interface ProductDetailScreenProps {
@@ -151,10 +239,10 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
     }
   }, [navigation]);
   
-  const hasValidProduct = routeProduct && (routeProduct as Product)?.title && (routeProduct as Product).title !== 'Ürün Başlığı';
-  
-  const [product, setProduct] = useState<Product | null>(hasValidProduct ? (routeProduct as Product) : null);
-  const [loading, setLoading] = useState(!!productId && !hasValidProduct);
+  // Always load fresh from server to get latest seller information
+  // Don't use route params product to avoid stale seller data
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(!!productId);
   const [error, setError] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -254,7 +342,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
     return normalizeImageUrl(product.seller.profileImage);
   }, [product?.seller?.profileImage]);
 
-  const loadProduct = useCallback(async () => {
+  const loadProduct = useCallback(async (forceRefresh = false) => {
     if (!productId) {
       setError(true);
       setLoading(false);
@@ -264,9 +352,24 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
     try {
       setLoading(true);
       setError(false);
+      
+      // Always force refresh to get latest seller information
+      // API function already handles cache busting internally
       const productData = await productsAPI.getProduct(productId);
       
       if (productData && productData.title) {
+        console.log('✅ Product loaded - Seller info:', {
+          name: productData.seller?.name,
+          phone: productData.seller?.phone,
+          location: productData.seller?.location,
+          sellerType: typeof productData.seller
+        });
+        
+        // Verify seller is populated (should be object, not ObjectId)
+        if (!productData.seller || typeof productData.seller === 'string') {
+          console.warn('⚠️ Seller not populated properly!');
+        }
+        
         setProduct(productData);
       } else {
         setError(true);
@@ -292,9 +395,21 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
     }
   }, [product?._id, user]);
 
+  // Always load product fresh when screen focuses - ensures seller info is up-to-date
+  useFocusEffect(
+    useCallback(() => {
+      if (productId) {
+        console.log('🔄 Screen focused, loading fresh product data...');
+        loadProduct(true);
+      }
+    }, [productId, loadProduct])
+  );
+
+  // Initial load when productId changes
   useEffect(() => {
-    if (productId && (!hasValidProduct || !product || !product.title || product.title === 'Ürün Başlığı')) {
-      loadProduct();
+    if (productId) {
+      console.log('🔄 Initial load, fetching fresh product...');
+      loadProduct(true);
     }
   }, [productId]);
 
@@ -446,44 +561,108 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
     }
   }, [user, productId, isFavorite]);
 
+  // Ürün URL'si oluştur
+  const getProductUrl = useCallback(() => {
+    return ENV.getProductUrl(productId || '');
+  }, [productId]);
+
+  // Paylaşım mesajı oluştur
+  const getShareMessage = useCallback(() => {
+    const url = getProductUrl();
+    return `🌿 ${product?.title || 'Ürün'}\n\n💰 Fiyat: ${product?.price || 0} ${product?.currency || '₺'}/${product?.unit || 'kg'}\n\n📦 Stok: ${product?.stock || 0} ${product?.unit || 'kg'}\n📍 Konum: ${locationString}\n\n🔗 Detaylar için: ${url}\n\n📱 Hal Kompleksi`;
+  }, [product, locationString, getProductUrl]);
+
+  // Paylaşım (Native Share Sheet)
   const handleShare = useCallback(async () => {
     try {
-      const shareText = `Hal Kompleksi - ${product?.title || 'Ürün'}: ${product?.price || 0} ${product?.currency || '₺'}`;
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      const message = getShareMessage();
+      
       await Share.share({
-        message: shareText,
+        message,
         title: product?.title || 'Ürün',
       });
     } catch (err: any) {
-      console.error('Error sharing:', err);
+      if (err.code !== 'SHARE_CANCELLED') {
+        console.error('Error sharing:', err);
+      }
     }
-  }, [product]);
+  }, [product, getShareMessage]);
 
   const handleWhatsApp = useCallback(async () => {
-    if (!product?.seller?.phone) return;
+    if (!product?.seller?.phone) {
+      Alert.alert('Hata', 'Satıcının telefon numarası bulunamadı');
+      return;
+    }
     
     try {
-      const phone = product.seller.phone.replace(/[^0-9]/g, '');
-      const whatsappUrl = `https://wa.me/${phone}`;
-      const canOpen = await Linking.canOpenURL(whatsappUrl);
-      if (canOpen) {
-        await Linking.openURL(whatsappUrl);
+      // Otomatik mesaj hazırla
+      const autoMessage = `Merhaba, Hal Kompleksi üzerinden "${product?.title || 'ürününüz'}" hakkında bilgi almak istiyorum.\n\nFiyat: ${product?.price || 0} ${product?.currency || '₺'}/${product?.unit || 'kg'}\nStok: ${product?.stock || 0} ${product?.unit || 'kg'}`;
+      const encodedMessage = encodeURIComponent(autoMessage);
+      
+      // Telefon numarası artık DB'de +905XXXXXXXXX formatında
+      // Sadece rakamları al (+ işaretini kaldır)
+      const cleanPhone = product.seller.phone.replace(/\+/g, '');
+      
+      // WhatsApp URL format with pre-filled message (+ işareti olmadan)
+      const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+      
+      console.log('📱 Opening WhatsApp');
+      console.log('📱 Phone (stored):', product.seller.phone);
+      console.log('📱 Phone (clean):', cleanPhone);
+      console.log('📱 WhatsApp URL:', whatsappUrl);
+      
+      // Try to open directly
+      try {
+        const supported = await Linking.canOpenURL(whatsappUrl);
+        console.log('📱 Can open URL:', supported);
+        
+        if (supported) {
+          await Linking.openURL(whatsappUrl);
+        } else {
+          // Fallback: try opening anyway (sometimes canOpenURL fails but URL still works)
+          await Linking.openURL(whatsappUrl);
+        }
+      } catch (openError) {
+        console.log('📱 Direct open failed, trying alternative:', openError);
+        
+        // Alternative: Try with whatsapp:// scheme if https fails
+        const whatsappScheme = `whatsapp://send?phone=${cleanPhone}&text=${encodedMessage}`;
+        try {
+          await Linking.openURL(whatsappScheme);
+        } catch (schemeError) {
+          // Last resort: Open in browser
+          console.log('📱 WhatsApp scheme failed, opening in browser');
+          await Linking.openURL(whatsappUrl);
+        }
       }
-    } catch (err) {
-      Alert.alert('Hata', 'WhatsApp açılamadı');
+    } catch (err: any) {
+      console.error('📱 WhatsApp error:', err);
+      Alert.alert(
+        'Hata', 
+        `WhatsApp açılamadı. Lütfen WhatsApp'ın kurulu olduğundan emin olun.\n\nHata: ${err?.message || 'Bilinmeyen hata'}`
+      );
     }
-  }, [product?.seller?.phone]);
+  }, [product]);
 
   const handleCall = useCallback(async () => {
     if (!product?.seller?.phone) return;
     
     try {
-      const phone = product.seller.phone.replace(/[^0-9]/g, '');
-      const telUrl = `tel:${phone}`;
+      // Telefon numarası +905XXXXXXXXX formatında
+      // tel: protokolü için + işareti ile kullanabiliriz
+      const telUrl = `tel:${product.seller.phone}`;
+      
+      console.log('📞 Calling:', product.seller.phone);
+      
       const canOpen = await Linking.canOpenURL(telUrl);
       if (canOpen) {
         await Linking.openURL(telUrl);
+      } else {
+        Alert.alert('Hata', 'Telefon araması yapılamadı');
       }
     } catch (err) {
+      console.error('📞 Call error:', err);
       Alert.alert('Hata', 'Arama yapılamadı');
     }
   }, [product?.seller?.phone]);
@@ -756,6 +935,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
 
             {/* Info Grid */}
             <View style={styles.infoGrid}>
+              {/* Stok bilgisi - tüm ürünler için */}
               <View style={styles.infoCard}>
                 <View style={styles.infoIconContainer}>
                   <Ionicons name="cube" size={24} color={COLORS.primary} />
@@ -766,6 +946,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
                 </Text>
               </View>
 
+              {/* Konum bilgisi - tüm ürünler için */}
               <View style={styles.infoCard}>
                 <View style={styles.infoIconContainer}>
                   <Ionicons name="location" size={24} color={COLORS.primary} />
@@ -776,25 +957,48 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
                 </Text>
               </View>
 
-              <View style={styles.infoCard}>
-                <View style={styles.infoIconContainer}>
-                  <Ionicons name="leaf" size={24} color={COLORS.primary} />
-                </View>
-                <Text style={styles.infoLabel}>Organik</Text>
-                <Text style={styles.infoValue}>
-                  {((product as any).tags?.includes('organik') || (product as any).isOrganic) ? 'Evet' : 'Hayır'}
-                </Text>
-              </View>
-
-              <View style={styles.infoCard}>
-                <View style={styles.infoIconContainer}>
-                  <Ionicons name="snow" size={24} color={COLORS.primary} />
-                </View>
-                <Text style={styles.infoLabel}>Soğuk Hava</Text>
-                <Text style={styles.infoValue}>
-                  {((product as any).tags?.includes('soğuk') || (product as any).coldStorage) ? 'Var' : 'Yok'}
-                </Text>
-              </View>
+              {/* Kategori-spesifik alanlar */}
+              {product.category && categoryFields[product.category] && product.categoryData && 
+                categoryFields[product.category].fields.map((field: any) => {
+                  const value = (product.categoryData as any)?.[field.key];
+                  
+                  // Değer yoksa gösterme
+                  if (value === undefined || value === null || value === '') return null;
+                  
+                  // Boolean değerleri formatla
+                  let displayValue = value;
+                  if (field.isBoolean) {
+                    displayValue = value ? 'Evet' : 'Hayır';
+                  } else if (field.isDate && value) {
+                    // Tarih formatla ve geçersiz tarihleri kontrol et
+                    try {
+                      const date = new Date(value);
+                      // Geçersiz tarih kontrolü - Invalid Date durumunda gösterme
+                      if (isNaN(date.getTime())) {
+                        return null;
+                      }
+                      displayValue = date.toLocaleDateString('tr-TR');
+                    } catch (e) {
+                      // Hata durumunda bu alanı gösterme
+                      return null;
+                    }
+                  } else {
+                    displayValue = String(value);
+                  }
+                  
+                  return (
+                    <View key={field.key} style={styles.infoCard}>
+                      <View style={styles.infoIconContainer}>
+                        <Ionicons name={field.icon as any} size={24} color={COLORS.primary} />
+                      </View>
+                      <Text style={styles.infoLabel}>{field.label}</Text>
+                      <Text style={styles.infoValue} numberOfLines={2}>
+                        {displayValue}
+                      </Text>
+                    </View>
+                  );
+                })
+              }
             </View>
 
             {/* Seller Card */}
@@ -850,7 +1054,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
                   activeOpacity={0.8}
                 >
                   <Ionicons name="logo-whatsapp" size={24} color="#fff" />
-                  <Text style={styles.contactButtonText}>WhatsApp</Text>
+                  <Text style={styles.contactButtonText}>Mesaj Gönder</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity

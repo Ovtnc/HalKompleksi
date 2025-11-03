@@ -1,0 +1,18 @@
+{
+  "presets": ["babel-preset-expo"],
+  "plugins": [
+    "react-native-reanimated/plugin"
+  ],
+  "env": {
+    "production": {
+      "plugins": [
+        ["transform-remove-console", { "exclude": ["error", "warn"] }],
+        ["babel-plugin-import", {
+          "libraryName": "@expo/vector-icons",
+          "libraryDirectory": "",
+          "camel2DashComponentName": false
+        }]
+      ]
+    }
+  }
+}

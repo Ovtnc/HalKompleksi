@@ -360,14 +360,26 @@ const AddProductScreen = ({ navigation }: any) => {
   };
 
   const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
-    });
+    try {
+      // İzin kontrolü
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'İzin Gerekli',
+          'Galeri erişimi için izin vermeniz gerekiyor.',
+          [{ text: 'Tamam' }]
+        );
+        return;
+      }
 
-    if (!result.canceled && result.assets[0]) {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
       setLoading(true);
       try {
         // Upload image to server
@@ -433,16 +445,32 @@ const AddProductScreen = ({ navigation }: any) => {
         setLoading(false);
       }
     }
+    } catch (error: any) {
+      console.error('Image picker error:', error);
+      Alert.alert('Hata', error?.message || 'Resim seçilirken bir hata oluştu.');
+    }
   };
 
   const pickVideo = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-      allowsEditing: true,
-      quality: 0.8,
-    });
+    try {
+      // İzin kontrolü
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'İzin Gerekli',
+          'Galeri erişimi için izin vermeniz gerekiyor.',
+          [{ text: 'Tamam' }]
+        );
+        return;
+      }
 
-    if (!result.canceled && result.assets[0]) {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+        allowsEditing: true,
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
       setLoading(true);
       try {
         // Upload video to server
@@ -507,6 +535,10 @@ const AddProductScreen = ({ navigation }: any) => {
       } finally {
         setLoading(false);
       }
+    }
+    } catch (error: any) {
+      console.error('Video picker error:', error);
+      Alert.alert('Hata', error?.message || 'Video seçilirken bir hata oluştu.');
     }
   };
 

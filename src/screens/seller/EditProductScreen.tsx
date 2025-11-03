@@ -18,7 +18,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { productsAPI } from '../../services/api';
+import { productsAPI, getAuthHeaders } from '../../services/api';
 import * as ImagePicker from 'expo-image-picker';
 import { ENV } from '../../config/env';
 import { categoriesAPI } from '../../services/api';
@@ -45,93 +45,129 @@ const CATEGORY_UI: Record<string, { color: string; icon: any; name?: string }> =
   diger: { color: '#64748B', icon: 'ellipse', name: 'Diğer' },
 };
 
-// Kategoriye özel alanlar
+// Kategoriye özel alanlar - AddProductScreen ile uyumlu
 const categoryFields = {
   meyve: {
+    unit: ['kg', 'ton', 'kasa', 'paket'],
     hasStock: true,
     hasUnit: true,
-    unit: ['kg', 'adet', 'paket', 'litre', 'gram'],
+    priceType: 'per_unit',
     fields: [
-      { key: 'variety', label: 'Çeşit', type: 'text', placeholder: 'Örn: Amasya elması' },
-      { key: 'harvestDate', label: 'Hasat Tarihi', type: 'date' },
+      { key: 'variety', label: 'Çeşit', type: 'text', placeholder: 'Örn: Amasya Elması' },
+      { key: 'harvest', label: 'Hasat Tarihi', type: 'date' },
       { key: 'organic', label: 'Organik', type: 'boolean' },
-      { key: 'coldStorage', label: 'Soğuk Hava Deposu', type: 'boolean' },
+      { key: 'coldStorage', label: 'Soğuk Hava Deposunda mı?', type: 'boolean' },
     ]
   },
   sebze: {
+    unit: ['kg', 'ton', 'kasa', 'paket'],
     hasStock: true,
     hasUnit: true,
-    unit: ['kg', 'adet', 'paket', 'litre', 'gram'],
+    priceType: 'per_unit',
     fields: [
-      { key: 'variety', label: 'Çeşit', type: 'text', placeholder: 'Örn: Domates' },
-      { key: 'harvestDate', label: 'Hasat Tarihi', type: 'date' },
+      { key: 'variety', label: 'Çeşit', type: 'text', placeholder: 'Örn: Domates Çeşidi' },
+      { key: 'harvest', label: 'Hasat Tarihi', type: 'date' },
       { key: 'organic', label: 'Organik', type: 'boolean' },
-      { key: 'coldStorage', label: 'Soğuk Hava Deposu', type: 'boolean' },
+      { key: 'coldStorage', label: 'Soğuk Hava Deposunda mı?', type: 'boolean' },
     ]
   },
   gida: {
+    unit: ['kg', 'ton', 'litre', 'kasa', 'paket', 'adet', 'şişe', 'teneke'],
     hasStock: true,
     hasUnit: true,
-    unit: ['kg', 'adet', 'paket', 'litre', 'gram'],
+    priceType: 'per_unit',
     fields: [
-      { key: 'productType', label: 'Ürün Tipi', type: 'select', options: ['Taze Gıda', 'Paketli Gıda', 'İçecek', 'Tatlı'] },
-      { key: 'brand', label: 'Marka', type: 'text', placeholder: 'Marka adı', conditional: true },
-      { key: 'expiryDate', label: 'Son Kullanma Tarihi', type: 'date', conditional: true },
-      { key: 'organic', label: 'Organik', type: 'boolean' },
-      { key: 'coldStorage', label: 'Soğuk Hava Deposu', type: 'boolean' },
+      { key: 'productType', label: 'Gıda Tipi', type: 'select', options: ['Bakliyat','Kuruyemiş', 'Zeytin', 'Zeytinyağı', 'Paketli Gıda', 'Diğer'] },
+      { key: 'productionDate', label: 'Üretim Tarihi', type: 'date', optional: true },
+      { key: 'brand', label: 'Marka (Sadece Paketli Gıda için zorunlu)', type: 'text', placeholder: 'Marka adı', conditional: true },
+      { key: 'expiryDate', label: 'Son Kullanma Tarihi (Sadece Paketli Gıda için zorunlu)', type: 'date', conditional: true },
     ]
   },
-  hayvancilik: {
-    hasStock: true,
-    hasUnit: true,
-    unit: ['adet', 'kg', 'gram'],
-    fields: [
-      { key: 'animalType', label: 'Hayvan Türü', type: 'select', options: ['Sığır', 'Koyun', 'Keçi', 'Tavuk', 'Hindi', 'Ördek', 'Kaz'] },
-      { key: 'age', label: 'Yaş', type: 'number', placeholder: 'Ay cinsinden' },
-      { key: 'weight', label: 'Ağırlık', type: 'number', placeholder: 'Kg cinsinden' },
-      { key: 'vaccinated', label: 'Aşılı', type: 'boolean' },
-    ]
-  },
-  tarim: {
-    hasStock: true,
-    hasUnit: true,
-    unit: ['kg', 'ton', 'gram'],
-    fields: [
-      { key: 'seedType', label: 'Tohum Türü', type: 'text', placeholder: 'Örn: Buğday' },
-      { key: 'harvestDate', label: 'Hasat Tarihi', type: 'date' },
-      { key: 'organic', label: 'Organik', type: 'boolean' },
-      { key: 'certified', label: 'Sertifikalı', type: 'boolean' },
-    ]
-  },
-  hizmet: {
+  nakliye: {
+    unit: ['km', 'adet', 'gün'],
     hasStock: false,
-    hasUnit: false,
+    hasUnit: true,
     priceType: 'per_service',
     fields: [
-      { key: 'serviceType', label: 'Hizmet Türü', type: 'select', options: ['Nakliye', 'İşçilik', 'Danışmanlık', 'Bakım', 'Onarım'] },
-      { key: 'experience', label: 'Deneyim', type: 'number', placeholder: 'Yıl cinsinden' },
-      { key: 'location', label: 'Hizmet Bölgesi', type: 'text', placeholder: 'Hangi bölgelerde hizmet veriyorsunuz' },
+      { key: 'vehicleType', label: 'Araç Tipi', type: 'select', options: ['Kamyon', 'Tır', 'Minibüs', 'Otobüs', 'Diğer'] },
+      { key: 'capacity', label: 'Kapasite (Ton)', type: 'number' },
+      { key: 'route', label: 'Güzergah', type: 'text', placeholder: 'Nereden - Nereye' },
+      { key: 'availability', label: 'Müsaitlik Durumu', type: 'select', options: ['Hemen', '1 Hafta İçinde', '1 Ay İçinde', 'Belirli Tarihler'] },
+    ]
+  },
+  kasa: {
+    unit: ['adet', 'kasa', 'takım'],
+    hasStock: true,
+    hasUnit: true,
+    priceType: 'per_unit',
+    fields: [
+      { key: 'material', label: 'Malzeme', type: 'select', options: ['Ahşap', 'Plastik', 'Karton', 'Metal', 'Diğer'] },
+      { key: 'size', label: 'Boyut', type: 'text', placeholder: 'Örn: 50x30x20 cm' },
+      { key: 'condition', label: 'Durum', type: 'select', options: ['Sıfır', 'İkinci El', 'Tamir Gerekiyor'] },
+    ]
+  },
+  zirai_ilac: {
+    unit: ['litre', 'kg', 'adet', 'kutu'],
+    hasStock: true,
+    hasUnit: true,
+    priceType: 'per_unit',
+    fields: [
+      { key: 'brand', label: 'Marka', type: 'text', placeholder: 'İlaç Markası' },
+      { key: 'productName', label: 'İlaç Adı', type: 'text', placeholder: 'Örn: Herbisit, Fungisit' },
+    ]
+  },
+  ambalaj: {
+    unit: ['adet', 'rol', 'kutu', 'metre'],
+    hasStock: true,
+    hasUnit: true,
+    priceType: 'per_unit',
+    fields: [
+      { key: 'material', label: 'Malzeme', type: 'select', options: ['Plastik', 'Kağıt', 'Karton', 'Cam', 'Metal'] },
+      { key: 'size', label: 'Boyut', type: 'text', placeholder: 'Örn: 25x15x10 cm' },
+      { key: 'color', label: 'Renk', type: 'text', placeholder: 'Örn: Şeffaf, Mavi' },
+      { key: 'quality', label: 'Kalite', type: 'select', options: ['A', 'B', 'C', 'Premium'] },
+    ]
+  },
+  indir_bindir: {
+    unit: ['kişi', 'saat', 'gün'],
+    hasStock: false,
+    hasUnit: true,
+    priceType: 'per_service',
+    fields: [
+      { key: 'workerCount', label: 'İşçi Sayısı', type: 'number' },
+      { key: 'experience', label: 'Deneyim', type: 'select', options: ['Yeni Başlayan', 'Deneyimli', 'Uzman'] },
+      { key: 'equipment', label: 'Ekipman', type: 'text', placeholder: 'Örn: Forklift, Vinç' },
+      { key: 'availability', label: 'Müsaitlik', type: 'select', options: ['Hemen', '1 Hafta İçinde', 'Belirli Tarihler'] },
     ]
   },
   emlak: {
+    unit: [],
     hasStock: false,
     hasUnit: false,
     priceType: 'per_property',
     fields: [
-      { key: 'propertyType', label: 'Emlak Türü', type: 'select', options: ['Tarla', 'Bahçe', 'Arsa', 'Ahır', 'Depo', 'Ev'] },
-      { key: 'area', label: 'Alan', type: 'number', placeholder: 'm² cinsinden' },
-      { key: 'rentalType', label: 'Kiralama Tipi', type: 'select', options: ['Satılık', 'Kiralık', 'Günlük Kiralık'] },
+      { key: 'propertyType', label: 'Emlak Tipi', type: 'select', options: ['Arsa', 'Dükkan', 'Ofis', 'Depo', 'Fabrika', 'Ev'] },
+      { key: 'area', label: 'Alan (m²)', type: 'number' },
+      { key: 'floor', label: 'Kat', type: 'number' },
+      { key: 'rooms', label: 'Oda Sayısı', type: 'number' },
+      { key: 'age', label: 'Yaş', type: 'number', placeholder: 'Bina yaşı (yıl)' },
+      { key: 'heating', label: 'Isıtma', type: 'select', options: ['Doğalgaz', 'Kömür', 'Elektrik', 'Güneş Enerjisi', 'Yok'] },
+      { key: 'rentalType', label: 'Kiralama Tipi', type: 'select', options: ['Satılık', 'Kiralık', 'Satılık/Kiralık'] },
     ]
   },
   arac: {
+    unit: [],
     hasStock: false,
     hasUnit: false,
     priceType: 'per_vehicle',
     fields: [
-      { key: 'vehicleType', label: 'Araç Türü', type: 'select', options: ['Traktör', 'Biçerdöver', 'Ekipman', 'Araç'] },
-      { key: 'brand', label: 'Marka', type: 'text', placeholder: 'Araç markası' },
-      { key: 'model', label: 'Model', type: 'text', placeholder: 'Araç modeli' },
-      { key: 'year', label: 'Yıl', type: 'number', placeholder: 'Üretim yılı' },
+      { key: 'brand', label: 'Marka', type: 'text', placeholder: 'Örn: Ford, Mercedes' },
+      { key: 'model', label: 'Model', type: 'text', placeholder: 'Örn: Transit, Sprinter' },
+      { key: 'year', label: 'Model Yılı', type: 'number' },
+      { key: 'km', label: 'Kilometre', type: 'number' },
+      { key: 'fuelType', label: 'Yakıt Tipi', type: 'select', options: ['Benzin', 'Dizel', 'Elektrik', 'Hibrit', 'LPG'] },
+      { key: 'transmission', label: 'Vites', type: 'select', options: ['Manuel', 'Otomatik', 'Yarı Otomatik'] },
+      { key: 'condition', label: 'Durum', type: 'select', options: ['Sıfır', 'İkinci El', 'Hasar Kayıtlı'] },
       { key: 'rentalType', label: 'Kiralama Tipi', type: 'select', options: ['Satılık', 'Kiralık', 'Günlük Kiralık'] },
     ]
   },
@@ -367,26 +403,82 @@ const EditProductScreen = ({ navigation, route }: any) => {
   const pickImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
       });
 
       if (!result.canceled && result.assets[0]) {
-        const newMedia = {
-          url: result.assets[0].uri,
-          type: result.assets[0].type === 'video' ? 'video' : 'image',
-          isPrimary: formData.media.length === 0
-        };
-        
-        setFormData({
-          ...formData,
-          media: [...formData.media, newMedia]
-        });
+        setLoading(true);
+        try {
+          // Upload image to server
+          const uploadFormData = new FormData();
+          uploadFormData.append('image', {
+            uri: result.assets[0].uri,
+            type: 'image/jpeg',
+            name: 'image.jpg',
+          } as any);
+
+          // Get auth headers without Content-Type (FormData will set it automatically with boundary)
+          const authHeaders = await getAuthHeaders();
+          // Remove Content-Type from auth headers - FormData needs to set it automatically
+          const { 'Content-Type': _, ...headersWithoutContentType } = authHeaders;
+          
+          // Check if token exists
+          if (!headersWithoutContentType.Authorization) {
+            Alert.alert('Oturum Hatası', 'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+            return;
+          }
+          
+          console.log('📤 Uploading image for edit...');
+          
+          const response = await fetch(`${ENV.API_BASE_URL}/upload/image`, {
+            method: 'POST',
+            headers: {
+              ...headersWithoutContentType,
+              // Don't set Content-Type - let fetch set it automatically with boundary for FormData
+            },
+            body: uploadFormData,
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            let errorData;
+            try {
+              errorData = JSON.parse(errorText);
+            } catch {
+              errorData = { message: errorText || 'Image upload failed' };
+            }
+            console.error('❌ Upload failed:', response.status, errorData);
+            throw new Error(errorData.message || 'Image upload failed');
+          }
+
+          const uploadResult = await response.json();
+          
+          const newMedia = {
+            url: uploadResult.url || uploadResult.path || result.assets[0].uri,
+            type: 'image',
+            isPrimary: formData.media.length === 0
+          };
+          
+          setFormData({
+            ...formData,
+            media: [...formData.media, newMedia]
+          });
+          
+          console.log('✅ Image uploaded successfully:', uploadResult.url);
+        } catch (uploadError: any) {
+          console.error('Error uploading image:', uploadError);
+          Alert.alert('Hata', `Resim yüklenirken bir hata oluştu: ${uploadError.message || 'Bilinmeyen hata'}`);
+        } finally {
+          setLoading(false);
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error picking image:', error);
+      Alert.alert('Hata', 'Resim seçilirken bir hata oluştu');
+      setLoading(false);
     }
   };
 

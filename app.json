@@ -1,0 +1,94 @@
+{
+  "expo": {
+    "name": "Hal Kompleksi",
+    "slug": "hal-kompleksi",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "description": "Hal Kompleksi - Çiftçiler ve alıcıları buluşturan tarım platformu",
+    "keywords": ["hal", "tarım", "çiftçi", "alıcı", "ürün", "market"],
+    "privacy": "public",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.halkompleksi.app",
+      "buildNumber": "1",
+      "appStoreUrl": "https://apps.apple.com/app/hal-kompleksi/id",
+      "deploymentTarget": "12.0",
+      "requireFullScreen": false,
+      "userInterfaceStyle": "light",
+      "backgroundColor": "#FFFFFF",
+      "splash": {
+        "image": "./assets/icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#FFFFFF"
+      },
+      "infoPlist": {
+        "NSCameraUsageDescription": "Uygulama, ürün fotoğrafları çekmek için kamera erişimi gerektirir.",
+        "NSPhotoLibraryUsageDescription": "Uygulama, ürün fotoğrafları eklemek için galeri erişimi gerektirir.",
+        "NSLocationWhenInUseUsageDescription": "Uygulama, konum tabanlı ürün arama için konum erişimi gerektirir.",
+        "NSMicrophoneUsageDescription": "Uygulama, video kayıtları için mikrofon erişimi gerektirir.",
+        "UIStatusBarStyle": "UIStatusBarStyleDefault",
+        "UIViewControllerBasedStatusBarAppearance": false,
+        "UILaunchStoryboardName": "SplashScreen",
+        "UIRequiresFullScreen": false,
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait"
+        ],
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ],
+        "LSApplicationQueriesSchemes": [
+          "whatsapp",
+          "whatsapp-api"
+        ]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "package": "com.halkompleksi.app",
+      "versionCode": 1,
+      "playStoreUrl": "https://play.google.com/store/apps/details?id=com.halkompleksi.app",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Uygulama, ürün fotoğrafları eklemek için galeri erişimi gerektirir.",
+          "cameraPermission": "Uygulama, ürün fotoğrafları çekmek için kamera erişimi gerektirir."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Uygulama, konum tabanlı ürün arama için konum erişimi gerektirir."
+        }
+      ],
+      "expo-secure-store"
+    ]
+  }
+}

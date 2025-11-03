@@ -3,12 +3,17 @@
 // ============================================
 
 // 🎯 CANLI SUNUCU - DOMAIN (Natro DNS)
-// Hem development hem production için aynı
-const API_BASE_URL = 'http://halkompleksi.com/api';
-const WEB_BASE_URL = 'http://halkompleksi.com';
+// ⚠️ PRODUCTION: HTTPS ZORUNLU (TestFlight/App Store için)
+const API_BASE_URL = 'https://halkompleksi.com/api';
+const WEB_BASE_URL = 'https://halkompleksi.com';
 const DOMAIN = 'halkompleksi.com';
 
-// IP kullanmak istersen:
+// ⚠️ HTTP sadece development için kullanın (App Store reddeder!)
+// Development için:
+// const API_BASE_URL = 'http://halkompleksi.com/api';
+// const WEB_BASE_URL = 'http://halkompleksi.com';
+
+// IP kullanmak istersen (sadece development):
 // const API_BASE_URL = 'http://109.199.114.223/api';
 // const WEB_BASE_URL = 'http://109.199.114.223';
 // const DOMAIN = '109.199.114.223';

@@ -111,8 +111,9 @@ router.post('/', [auth, adminOnly, marketReportUpload.single('image')], async (r
 
     // Handle image upload
     if (req.file) {
+      const baseUrl = process.env.BASE_URL || `http://${process.env.HOST || 'localhost'}:${process.env.PORT || 5001}`;
       marketReport.image = {
-        url: `http://109.199.114.223:5001/uploads/market-reports/${req.file.filename}`,
+        url: `${baseUrl}/uploads/market-reports/${req.file.filename}`,
         publicId: req.file.filename
       };
     }
@@ -173,8 +174,9 @@ router.put('/:id', [auth, adminOnly, marketReportUpload.single('image')], async 
         }
       }
       
+      const baseUrl = process.env.BASE_URL || `http://${process.env.HOST || 'localhost'}:${process.env.PORT || 5001}`;
       report.image = {
-        url: `http://109.199.114.223:5001/uploads/market-reports/${req.file.filename}`,
+        url: `${baseUrl}/uploads/market-reports/${req.file.filename}`,
         publicId: req.file.filename
       };
     }

@@ -8,6 +8,7 @@ const errorHandler = require('./middleware/errorHandler');
 require('dotenv').config();
 
 const connectDB = require('./config/database');
+const urlConfig = require('./config/urls');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const productRoutes = require('./routes/products');
@@ -20,7 +21,7 @@ const marketReportRoutes = require('./routes/marketReports');
 const categoryRoutes = require('./routes/categories');
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = urlConfig.PORT;
 
 // Connect to MongoDB
 connectDB();
@@ -36,9 +37,11 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-// CORS configuration
+// CORS configuration - Development'ta tüm originlere izin ver
 app.use(cors({
-  origin: [
+  origin: urlConfig.IS_DEVELOPMENT ? '*' : [
+    urlConfig.FRONTEND_URL,
+    urlConfig.WEB_URL,
     'http://localhost:8081', 
     'http://localhost:8088', 
     'http://192.168.0.27:8081', 
@@ -77,9 +80,9 @@ app.use('/uploads/profiles', (req, res, next) => {
   next();
 }, express.static('public/uploads/profiles'));
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Body parsing middleware (video için artırıldı)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Logging middleware
 app.use(morgan('combined'));
@@ -133,8 +136,15 @@ app.use((req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Hal Kompleksi API running on port ${PORT}`);
-  console.log(`📱 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:8082'}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📦 MongoDB Connected: ${process.env.MONGODB_URI ? 'cloud' : 'localhost'}`);
+  console.log('============================================');
+  console.log('🚀 Hal Kompleksi API');
+  console.log('============================================');
+  console.log(`📍 Server: http://0.0.0.0:${PORT}`);
+  console.log(`🌐 API URL: ${urlConfig.API_URL}`);
+  console.log(`🖥️  Web URL: ${urlConfig.WEB_URL}`);
+  console.log(`📱 Frontend URL: ${urlConfig.FRONTEND_URL}`);
+  console.log(`🏷️  Domain: ${urlConfig.DOMAIN}`);
+  console.log(`🌍 Environment: ${urlConfig.IS_PRODUCTION ? 'production' : 'development'}`);
+  console.log(`📦 MongoDB: ${process.env.MONGODB_URI ? 'cloud' : 'localhost'}`);
+  console.log('============================================');
 });

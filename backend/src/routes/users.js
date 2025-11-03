@@ -14,7 +14,8 @@ const fixProfileImageUrl = (user) => {
     }
     // If it's a relative path, make it absolute
     else if (user.profileImage.startsWith('/uploads/')) {
-      user.profileImage = `http://109.199.114.223:5001${user.profileImage}`;
+      const baseUrl = process.env.BASE_URL || `http://${process.env.HOST || 'localhost'}:${process.env.PORT || 5001}`;
+      user.profileImage = `${baseUrl}${user.profileImage}`;
     }
   }
   return user;
@@ -63,6 +64,9 @@ router.put('/profile', [
     const { name, phone, location, sellerInfo, activeRole } = req.body;
     
     console.log('🔍 activeRole from request:', activeRole);
+    console.log('🔍 name from request:', name);
+    console.log('🔍 phone from request:', phone);
+    console.log('🔍 location from request:', location);
     
     // Fetch current user to merge updates
     const currentUser = await User.findById(req.user._id);
@@ -111,10 +115,26 @@ router.put('/profile', [
       { new: true, runValidators: true }
     ).select('-password');
 
+    console.log('🔍 User after update:', {
+      id: user._id,
+      name: user.name,
+      phone: user.phone,
+      location: user.location,
+      activeRole: user.activeRole,
+      userType: user.userType
+    });
+
+    // Note: Product seller information is populated from User model via reference
+    // Products will automatically show updated seller info when fetched with populate
+    // This is the correct approach - no need to duplicate data
+    
     const fixedUser = fixProfileImageUrl(user);
 
-    console.log('✅ User updated:', {
+    console.log('✅ User updated and fixed:', {
       id: fixedUser._id,
+      name: fixedUser.name,
+      phone: fixedUser.phone,
+      location: fixedUser.location,
       activeRole: fixedUser.activeRole,
       userType: fixedUser.userType
     });
@@ -137,10 +157,10 @@ router.put('/profile-image', [
   body('profileImage').notEmpty().withMessage('Profil resmi URL\'si gereklidir')
 ], async (req, res) => {
   try {
-    console.log('Profile image update request:', req.body);
+    console.log('📸 Profile image update request:', req.body);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('Validation errors:', errors.array());
+      console.log('❌ Validation errors:', errors.array());
       return res.status(400).json({
         message: 'Doğrulama başarısız',
         errors: errors.array()
@@ -148,7 +168,9 @@ router.put('/profile-image', [
     }
 
     const { profileImage } = req.body;
-    console.log('Updating profile image for user:', req.user._id, 'with URL:', profileImage);
+    console.log('📸 Updating profile image for user:', req.user._id, 'with URL:', profileImage);
+    console.log('📸 URL length:', profileImage?.length || 0);
+    console.log('📸 URL preview:', profileImage?.substring(0, 100));
 
     const user = await User.findByIdAndUpdate(
       req.user._id,
@@ -156,7 +178,23 @@ router.put('/profile-image', [
       { new: true }
     ).select('-password');
 
+    console.log('✅ User after profile image update:', {
+      id: user._id,
+      name: user.name,
+      profileImage: user.profileImage
+    });
+    
+    // Verify the update was saved to database
+    const verifyUser = await User.findById(req.user._id).select('profileImage');
+    console.log('✅ Verified profileImage from database:', verifyUser.profileImage);
+
     const fixedUser = fixProfileImageUrl(user);
+
+    console.log('✅ Profile image updated and fixed:', {
+      id: fixedUser._id,
+      name: fixedUser.name,
+      profileImage: fixedUser.profileImage
+    });
 
     res.json({
         message: 'Profil resmi başarıyla güncellendi',

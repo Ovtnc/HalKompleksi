@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
   phone: {
     type: String,
     required: [true, 'Telefon numarası gereklidir'],
-    match: [/^[\+]?[0-9]{10,16}$/, 'Lütfen geçerli bir telefon numarası girin']
+    match: [/^0[0-9]{10}$/, 'Lütfen geçerli bir Türkiye telefon numarası girin (05XX XXX XX XX formatında)']
   },
   userType: {
     type: String,
@@ -95,7 +95,7 @@ const userSchema = new mongoose.Schema({
 
 // Indexes for better query performance
 userSchema.index({ email: 1 }, { unique: true });
-userSchema.index({ phone: 1 });
+userSchema.index({ phone: 1 }, { unique: true, sparse: true }); // Unique phone numbers
 userSchema.index({ role: 1 });
 userSchema.index({ 'location.city': 1 });
 userSchema.index({ createdAt: -1 });
@@ -103,9 +103,27 @@ userSchema.index({ createdAt: -1 });
 // Set userRoles and activeRole based on userType for backward compatibility
 userSchema.pre('save', function(next) {
   // If userRoles is not set or empty, initialize from userType
+  // IMPORTANT: All users get both buyer and seller roles (except admin)
   if (!this.userRoles || this.userRoles.length === 0) {
     if (this.userType === 'buyer' || this.userType === 'seller') {
-      this.userRoles = [this.userType];
+      // Her kullanıcı hem buyer hem seller olabilir
+      this.userRoles = ['buyer', 'seller'];
+    } else if (this.userType === 'admin') {
+      // Admin sadece admin rolüne sahip olur
+      this.userRoles = ['admin'];
+    }
+  } else {
+    // Eğer userRoles var ama hem buyer hem seller yoksa, her ikisini de ekle (admin hariç)
+    if (this.userType !== 'admin') {
+      const hasBuyer = this.userRoles.includes('buyer');
+      const hasSeller = this.userRoles.includes('seller');
+      
+      if (!hasBuyer) {
+        this.userRoles.push('buyer');
+      }
+      if (!hasSeller) {
+        this.userRoles.push('seller');
+      }
     }
   }
   

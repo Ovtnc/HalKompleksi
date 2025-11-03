@@ -339,35 +339,49 @@ router.get('/products', [auth, adminOnly], async (req, res) => {
     const { page = 1, limit = 10, status, search } = req.query;
     
     // Base query - only show approved products by default
-    const query = {
+    let query = {
       isApproved: true,
       isRejected: { $ne: true }
     };
     
     // Override for pending products
     if (status === 'pending') {
-      query.isApproved = false;
-      query.isRejected = { $ne: true };
+      query = {
+        isApproved: false,
+        isRejected: { $ne: true }
+      };
     }
     
     // Override for all products (admin can see all)
     if (status === 'all') {
-      delete query.isApproved;
-      delete query.isRejected;
+      query = {}; // Reset query to show all products
     }
 
     // Add search functionality
     if (search && search.trim()) {
       const searchRegex = new RegExp(search.trim(), 'i');
-      query.$and = query.$and || [];
-      query.$and.push({
-        $or: [
-          { title: searchRegex },
-          { description: searchRegex },
-          { category: searchRegex },
-          { location: searchRegex }
-        ]
-      });
+      if (Object.keys(query).length === 0) {
+        // If query is empty, create new query with search
+        query = {
+          $or: [
+            { title: searchRegex },
+            { description: searchRegex },
+            { category: searchRegex },
+            { 'location.city': searchRegex }
+          ]
+        };
+      } else {
+        // Add search to existing query
+        query.$and = query.$and || [];
+        query.$and.push({
+          $or: [
+            { title: searchRegex },
+            { description: searchRegex },
+            { category: searchRegex },
+            { 'location.city': searchRegex }
+          ]
+        });
+      }
     }
 
     console.log('🔍 Admin: Products query:', { status, search, query });

@@ -25,6 +25,42 @@ const fixImageUrls = (products) => {
   });
 };
 
+// Helper function to clean categoryData - remove empty, null, undefined, and invalid date values
+const cleanCategoryData = (categoryData) => {
+  if (!categoryData || typeof categoryData !== 'object') {
+    return {};
+  }
+
+  const cleaned = {};
+  
+  for (const [key, value] of Object.entries(categoryData)) {
+    // Skip empty, null, or undefined values
+    if (value === null || value === undefined || value === '') {
+      continue;
+    }
+
+    // For date fields, validate the date
+    if (key.toLowerCase().includes('date') || key === 'harvest' || key === 'expiryDate' || key === 'productionDate') {
+      try {
+        const date = new Date(value);
+        // Check if date is valid
+        if (!isNaN(date.getTime())) {
+          cleaned[key] = value;
+        }
+        // Skip invalid dates
+      } catch (e) {
+        // Skip dates that can't be parsed
+        continue;
+      }
+    } else {
+      // For non-date fields, keep the value if it's not empty
+      cleaned[key] = value;
+    }
+  }
+
+  return cleaned;
+};
+
 // @route   GET /api/products
 // @desc    Get all products
 // @access  Public
@@ -123,6 +159,9 @@ router.get('/', async (req, res) => {
     // Fix image URLs
     const fixedProducts = fixImageUrls(products);
 
+    // Set cache headers to prevent stale seller information
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    
     res.json({
       products: fixedProducts,
       totalPages: Math.ceil(total / limit),
@@ -151,6 +190,9 @@ router.get('/featured', async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(10);
 
+    // Set cache headers to ensure fresh seller information
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    
     res.json({ products });
   } catch (error) {
     console.error('Get featured products error:', error);
@@ -325,15 +367,47 @@ router.put('/:id/views', async (req, res) => {
 // @access  Public
 router.get('/:id', async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id)
-      .populate('seller', 'name phone location sellerInfo profileImage');
+    const User = require('../models/User');
+    
+    // Get product first
+    const product = await Product.findById(req.params.id);
 
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
+    // Get seller ID
+    const sellerId = product.seller;
+    console.log('📦 Product seller ID:', sellerId);
+
+    // Fetch seller directly from User collection to ensure fresh data
+    const seller = await User.findById(sellerId).select('name phone location sellerInfo profileImage');
+    console.log('👤 Fresh seller data from User collection:', {
+      name: seller?.name,
+      phone: seller?.phone,
+      location: seller?.location,
+      profileImage: seller?.profileImage
+    });
+
+    // Manually attach fresh seller data to product
+    product.seller = seller;
+
     // Increment view count
     await product.incrementViews();
+    
+    // Ensure seller is still attached after incrementViews
+    if (!product.seller || typeof product.seller === 'string') {
+      product.seller = await User.findById(sellerId).select('name phone location sellerInfo profileImage');
+    }
+
+    // Log final seller info
+    console.log('✅ Final product seller info:', {
+      sellerId: product.seller?._id,
+      sellerName: product.seller?.name,
+      sellerPhone: product.seller?.phone,
+      sellerLocation: product.seller?.location,
+      sellerProfileImage: product.seller?.profileImage
+    });
 
     // Fix image URLs
     if (product.images) {
@@ -349,6 +423,9 @@ router.get('/:id', async (req, res) => {
       });
     }
 
+    // Set cache headers to ensure fresh seller information
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    
     res.json({ product });
   } catch (error) {
     console.error('Get product error:', error);
@@ -397,7 +474,7 @@ router.post('/', [
       isApproved: false, // Products need admin approval
       approvedAt: null,
       approvedBy: null,
-      categoryData: req.body.categoryData || {},
+      categoryData: cleanCategoryData(req.body.categoryData),
       images: processedImages
     };
 
@@ -472,9 +549,15 @@ router.put('/:id', [
 
     console.log('✅ Product found, updating...');
 
+    // Clean categoryData if it exists in the update
+    const updateData = { ...req.body };
+    if (updateData.categoryData) {
+      updateData.categoryData = cleanCategoryData(updateData.categoryData);
+    }
+
     const updatedProduct = await Product.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateData,
       { new: true, runValidators: true }
     ).populate('seller', 'name phone location sellerInfo profileImage');
 
@@ -631,6 +714,9 @@ router.get('/seller/my-products', [auth, authorize('seller')], async (req, res) 
     }));
 
     const total = await Product.countDocuments(query);
+
+    // Set cache headers to ensure fresh seller information
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
 
     res.json({
       products: productsWithFavoritesCount,

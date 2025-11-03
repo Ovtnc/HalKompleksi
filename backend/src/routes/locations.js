@@ -66,9 +66,43 @@ router.get('/cities', async (req, res) => {
       .select('name code')
       .sort({ name: 1 });
     
-    res.json({ cities, total: cities.length });
+    res.json(cities);
   } catch (error) {
     console.error('Error fetching cities:', error);
+    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
+  }
+});
+
+// @route   GET /api/locations/districts
+// @desc    Get districts for a specific city by name
+// @access  Public
+router.get('/districts', async (req, res) => {
+  try {
+    const { city } = req.query;
+    console.log('🏙️ Districts request for city:', city);
+    
+    if (!city) {
+      return res.status(400).json({ message: 'City parameter is required' });
+    }
+    
+    const cityData = await Location.findOne({ 
+      name: { $regex: new RegExp(city, 'i') }, 
+      isActive: true 
+    }).select('districts name');
+    
+    console.log('🏙️ Found city:', cityData ? cityData.name : 'Not found');
+    
+    if (!cityData) {
+      console.log('❌ City not found for name:', city);
+      return res.status(404).json({ message: 'City not found' });
+    }
+    
+    const districts = cityData.districts ? cityData.districts.filter(district => district.isActive) : [];
+    console.log('🏙️ Districts found:', districts.length);
+    
+    res.json(districts);
+  } catch (error) {
+    console.error('❌ Error fetching districts:', error);
     res.status(500).json({ message: 'Sunucu hatası', error: error.message });
   }
 });

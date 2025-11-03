@@ -5,8 +5,8 @@ import { ENV } from '../config/env';
 // VPS API URL - Use VPS server for production
 const API_BASE_URL = ENV.API_BASE_URL;
 
-// Fetch with timeout
-const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout = 10000) => {
+// Fetch with timeout - 30 saniye (video upload için)
+const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout = 30000) => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   
@@ -17,8 +17,11 @@ const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout 
     });
     clearTimeout(timeoutId);
     return response;
-  } catch (error) {
+  } catch (error: any) {
     clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('İstek zaman aşımına uğradı. Lütfen internet bağlantınızı kontrol edin.');
+    }
     throw error;
   }
 };

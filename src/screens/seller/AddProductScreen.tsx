@@ -213,30 +213,43 @@ const AddProductScreen = ({ navigation }: any) => {
 
   // Load cities on mount
   useEffect(() => {
-    // Always try to switch to seller role when entering this screen
-    if (user) {
-      const userRoles = (user as any).userRoles || [];
-      const activeRole = (user as any).activeRole || user.userType;
-      
-      console.log('🔍 AddProductScreen - User roles:', userRoles);
-      console.log('🔍 AddProductScreen - Active role:', activeRole);
-      
-      // Force switch to seller role if user has seller role
-      if (userRoles.includes('seller')) {
-        if (activeRole !== 'seller') {
-          console.log('🔄 Auto-switching to seller role in AddProductScreen...');
-          switchToSellerRole();
-        } else {
-          console.log('✅ User already in seller role');
+    const initializeScreen = async () => {
+      try {
+        console.log('🚀 AddProductScreen initializing...');
+        
+        // Always try to switch to seller role when entering this screen
+        if (user) {
+          const userRoles = (user as any).userRoles || [];
+          const activeRole = (user as any).activeRole || user.userType;
+          
+          console.log('🔍 AddProductScreen - User roles:', userRoles);
+          console.log('🔍 AddProductScreen - Active role:', activeRole);
+          
+          // Force switch to seller role if user has seller role
+          if (userRoles.includes('seller')) {
+            if (activeRole !== 'seller') {
+              console.log('🔄 Auto-switching to seller role in AddProductScreen...');
+              await switchToSellerRole();
+            } else {
+              console.log('✅ User already in seller role');
+            }
+          } else {
+            console.log('❌ User does not have seller role - adding seller role');
+            // Add seller role to user
+            await addSellerRole();
+          }
         }
-      } else {
-        console.log('❌ User does not have seller role - adding seller role');
-        // Add seller role to user
-        addSellerRole();
+        
+        // Load cities
+        await loadCities();
+        console.log('✅ AddProductScreen initialized successfully');
+      } catch (error) {
+        console.error('❌ AddProductScreen initialization error:', error);
+        // Don't crash - just log the error
       }
-    }
+    };
     
-    loadCities();
+    initializeScreen();
   }, [user]);
 
   const addSellerRole = async () => {

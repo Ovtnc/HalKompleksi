@@ -23,12 +23,12 @@ const DEV_CONFIG = {
 
 // 🚀 PRODUCTION (Canlı Sunucu) - IP veya Domain
 const PROD_CONFIG = {
-  // IP ile kullanım (HTTPS yapılandırması yapılana kadar)
+  // ⚠️ ŞU ANDA SADECE IP İLE ÇALIŞIYOR (Cloudflare henüz hazır değil)
   API_URL: 'http://109.199.114.223:5001/api',
   WEB_URL: 'http://109.199.114.223:5001',
   DOMAIN: '109.199.114.223:5001',
   
-  // Domain ile kullanım için (SSL sertifikası sonrası):
+  // 🔒 Cloudflare + SSL hazır olunca aşağıdakini aktif et:
   // API_URL: 'https://halkompleksi.com/api',
   // WEB_URL: 'https://halkompleksi.com',
   // DOMAIN: 'halkompleksi.com',
@@ -39,6 +39,14 @@ const PROD_CONFIG = {
 const ACTIVE_CONFIG = __DEV__ ? DEV_CONFIG : PROD_CONFIG;
 
 // ============================================
+
+// Log configuration on startup
+console.log('🌐 ENV Configuration:');
+console.log('  Mode:', __DEV__ ? 'DEVELOPMENT' : 'PRODUCTION');
+console.log('  Platform:', Platform.OS);
+console.log('  API_URL:', ACTIVE_CONFIG.API_URL);
+console.log('  WEB_URL:', ACTIVE_CONFIG.WEB_URL);
+console.log('  DOMAIN:', ACTIVE_CONFIG.DOMAIN);
 
 export const ENV = {
   // 🌐 URL Configuration

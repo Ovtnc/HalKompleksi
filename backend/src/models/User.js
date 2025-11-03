@@ -22,7 +22,14 @@ const userSchema = new mongoose.Schema({
   phone: {
     type: String,
     required: [true, 'Telefon numarası gereklidir'],
-    match: [/^0[0-9]{10}$/, 'Lütfen geçerli bir Türkiye telefon numarası girin (05XX XXX XX XX formatında)']
+    // +90 ile başlayan veya 0 ile başlayan 11 haneli numara
+    validate: {
+      validator: function(v) {
+        // +905XXXXXXXXX veya 05XXXXXXXXX formatı
+        return /^\+?905[0-9]{9}$/.test(v) || /^05[0-9]{9}$/.test(v);
+      },
+      message: 'Lütfen geçerli bir Türkiye telefon numarası girin (05XX XXX XX XX formatında)'
+    }
   },
   userType: {
     type: String,
@@ -99,6 +106,27 @@ userSchema.index({ phone: 1 }, { unique: true, sparse: true }); // Unique phone 
 userSchema.index({ role: 1 });
 userSchema.index({ 'location.city': 1 });
 userSchema.index({ createdAt: -1 });
+
+// Normalize phone number to +90 format
+userSchema.pre('save', function(next) {
+  if (this.phone && this.isModified('phone')) {
+    // Sadece rakamları al
+    let cleanPhone = this.phone.replace(/[^0-9]/g, '');
+    
+    // 0 ile başlıyorsa 90 ekle
+    if (cleanPhone.startsWith('0')) {
+      cleanPhone = '90' + cleanPhone.substring(1);
+    }
+    
+    // + ekle
+    if (!cleanPhone.startsWith('+')) {
+      this.phone = '+' + cleanPhone;
+    } else {
+      this.phone = cleanPhone;
+    }
+  }
+  next();
+});
 
 // Set userRoles and activeRole based on userType for backward compatibility
 userSchema.pre('save', function(next) {

@@ -314,9 +314,10 @@ const AddProductScreen = ({ navigation }: any) => {
     setLoadingCities(true);
     try {
       const response = await locationsAPI.getCities();
-      setCities(response.cities);
+      setCities(response.cities || []);
     } catch (error) {
       console.error('Error loading cities:', error);
+      setCities([]); // Hata durumunda boş array
       Alert.alert('Hata', 'İller yüklenirken hata oluştu');
     } finally {
       setLoadingCities(false);
@@ -325,12 +326,14 @@ const AddProductScreen = ({ navigation }: any) => {
 
   const loadDistricts = async (city: any) => {
     setLoadingDistricts(true);
+    setDistricts([]); // Reset districts
     try {
       const cityId = city._id || city;
       const response = await locationsAPI.getDistricts(cityId);
       setDistricts(response.districts || []);
     } catch (error) {
       console.error('Error loading districts:', error);
+      setDistricts([]); // Hata durumunda boş array
       Alert.alert('Hata', 'İlçeler yüklenirken bir hata oluştu');
     } finally {
       setLoadingDistricts(false);
@@ -352,13 +355,13 @@ const AddProductScreen = ({ navigation }: any) => {
   };
 
   // Filter cities based on search text
-  const filteredCities = cities.filter(city => 
-    city.name.toLowerCase().includes(citySearchText.toLowerCase())
+  const filteredCities = (cities || []).filter(city => 
+    city?.name?.toLowerCase().includes(citySearchText.toLowerCase())
   );
 
   // Filter districts based on search text
-  const filteredDistricts = districts.filter(district => 
-    district.name.toLowerCase().includes(districtSearchText.toLowerCase())
+  const filteredDistricts = (districts || []).filter(district => 
+    district?.name?.toLowerCase().includes(districtSearchText.toLowerCase())
   );
 
   const handleCategorySelect = (category: any) => {

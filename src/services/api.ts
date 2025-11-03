@@ -172,9 +172,13 @@ export const authAPI = {
 // Categories API
 export const categoriesAPI = {
   getCategories: async () => {
-    const response = await fetch(`${API_BASE_URL}/products/categories`);
+    const url = `${API_BASE_URL}/products/categories`;
+    console.log('📡 Fetching categories from:', url);
+    
+    const response = await fetch(url);
     
     if (!response.ok) {
+      console.error('❌ Categories fetch failed:', response.status);
       throw new Error('Failed to fetch categories');
     }
     
@@ -195,6 +199,8 @@ export const productsAPI = {
     }
     
     const url = `${API_BASE_URL}/products${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    console.log('📡 Fetching products from:', url);
+    console.log('📡 API_BASE_URL:', API_BASE_URL);
     const response = await fetch(url);
     
     if (!response.ok) {

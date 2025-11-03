@@ -17,10 +17,12 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/hal-ko
 
 // Eski ve yeni URL pattern'leri
 const OLD_PATTERNS = [
-  'http://halkompleksi.com',
-  'http://109.199.114.223',
   'http://109.199.114.223:5001',
-  'http://localhost:5001'
+  'http://109.199.114.223',
+  'http://halkompleksi.com:5001',
+  'http://halkompleksi.com',
+  'http://localhost:5001',
+  'https://halkompleksi.com:5001' // Port numaralı HTTPS de düzelt
 ];
 
 const NEW_BASE_URL = 'https://halkompleksi.com';
@@ -29,12 +31,12 @@ const NEW_BASE_URL = 'https://halkompleksi.com';
 function fixUrl(url) {
   if (!url || typeof url !== 'string') return url;
   
-  // Zaten HTTPS ve doğru domain ise değiştirme
-  if (url.startsWith('https://halkompleksi.com')) {
+  // Zaten doğru URL ise değiştirme (HTTPS, domain doğru, port yok)
+  if (url.startsWith('https://halkompleksi.com/')) {
     return url;
   }
   
-  // Eski pattern'leri değiştir
+  // Eski pattern'leri değiştir (uzun pattern'ler önce kontrol edilir)
   for (const oldPattern of OLD_PATTERNS) {
     if (url.startsWith(oldPattern)) {
       // Sadece base URL'i değiştir, path'i koru

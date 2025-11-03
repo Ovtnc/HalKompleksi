@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { auth, authorize } = require('../middleware/auth');
+const { WEB_URL } = require('../config/urls');
 
 const router = express.Router();
 
@@ -14,8 +15,7 @@ const fixProfileImageUrl = (user) => {
     }
     // If it's a relative path, make it absolute
     else if (user.profileImage.startsWith('/uploads/')) {
-      const baseUrl = process.env.BASE_URL || `http://${process.env.HOST || 'localhost'}:${process.env.PORT || 5001}`;
-      user.profileImage = `${baseUrl}${user.profileImage}`;
+      user.profileImage = `${WEB_URL}${user.profileImage}`;
     }
   }
   return user;

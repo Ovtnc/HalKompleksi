@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const { FRONTEND_URL } = require('../config/urls');
 
 // Email transporter oluştur
 const createTransporter = () => {
@@ -16,7 +17,7 @@ const sendPasswordResetEmail = async (email, resetToken) => {
   try {
     const transporter = createTransporter();
     
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:8081'}/reset-password?token=${resetToken}`;
+    const resetUrl = `${FRONTEND_URL}/reset-password?token=${resetToken}`;
     
     const mailOptions = {
       from: process.env.EMAIL_USER || 'your-email@gmail.com',

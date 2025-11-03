@@ -5,12 +5,13 @@ const MarketReport = require('../models/MarketReport');
 const { marketReportUpload } = require('../middleware/upload');
 const fs = require('fs');
 const path = require('path');
+const { WEB_URL } = require('../config/urls');
 
 // Helper function to fix image URLs
 const fixImageUrls = (reports) => {
   return reports.map(report => {
     if (report.image && report.image.url && !report.image.url.startsWith('http')) {
-      report.image.url = `http://109.199.114.223:5001${report.image.url}`;
+      report.image.url = `${WEB_URL}${report.image.url}`;
     }
     return report;
   });
@@ -111,9 +112,8 @@ router.post('/', [auth, adminOnly, marketReportUpload.single('image')], async (r
 
     // Handle image upload
     if (req.file) {
-      const baseUrl = process.env.BASE_URL || `http://${process.env.HOST || 'localhost'}:${process.env.PORT || 5001}`;
       marketReport.image = {
-        url: `${baseUrl}/uploads/market-reports/${req.file.filename}`,
+        url: `${WEB_URL}/uploads/market-reports/${req.file.filename}`,
         publicId: req.file.filename
       };
     }
@@ -174,9 +174,8 @@ router.put('/:id', [auth, adminOnly, marketReportUpload.single('image')], async 
         }
       }
       
-      const baseUrl = process.env.BASE_URL || `http://${process.env.HOST || 'localhost'}:${process.env.PORT || 5001}`;
       report.image = {
-        url: `${baseUrl}/uploads/market-reports/${req.file.filename}`,
+        url: `${WEB_URL}/uploads/market-reports/${req.file.filename}`,
         publicId: req.file.filename
       };
     }

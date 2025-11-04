@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
-import { StatusBar, LogBox, Alert, Linking } from 'react-native';
+import { StatusBar, LogBox, Alert } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider } from './src/contexts/AuthContext';
+import { DeepLinkProvider } from './src/contexts/DeepLinkContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import ErrorBoundary from './src/components/ErrorBoundary';
 
@@ -66,38 +67,20 @@ export default function App() {
     if (ErrorUtils) {
       ErrorUtils.setGlobalHandler(globalErrorHandler);
     }
-
-    // Handle deep links
-    const handleDeepLink = (event: { url: string }) => {
-      console.log('🔗 Deep link received:', event.url);
-      // Deep link handling is automatic with NavigationContainer linking config
-    };
-
-    // Listen for deep links
-    const subscription = Linking.addEventListener('url', handleDeepLink);
-
-    // Check if app was opened with a deep link
-    Linking.getInitialURL().then(url => {
-      if (url) {
-        console.log('🔗 App opened with URL:', url);
-      }
-    });
-
-    return () => {
-      subscription.remove();
-    };
   }, []);
 
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
-          <AuthProvider>
-            <NavigationContainer linking={linking}>
-              <AppNavigator />
-            </NavigationContainer>
-            <StatusBar barStyle="light-content" />
-          </AuthProvider>
+          <DeepLinkProvider>
+            <AuthProvider>
+              <NavigationContainer linking={linking}>
+                <AppNavigator />
+              </NavigationContainer>
+              <StatusBar barStyle="light-content" />
+            </AuthProvider>
+          </DeepLinkProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>
     </ErrorBoundary>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, StatusBar, Text, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
+import { useDeepLink } from '../contexts/DeepLinkContext';
 
 // Import screens
 import NewAuthScreen from '../screens/auth/NewAuthScreen';
@@ -48,6 +49,7 @@ const log = {
 // Custom Tab Menu - Modern Design
 const CustomTabMenu = () => {
   const { user } = useAuth();
+  const { pendingNavigation, clearPendingNavigation } = useDeepLink();
   const [activeTab, setActiveTab] = useState('Anasayfa');
   const [currentScreen, setCurrentScreen] = useState('Home');
   const [navigationParams, setNavigationParams] = useState<any>(null);
@@ -57,6 +59,16 @@ const CustomTabMenu = () => {
   const userRole = user?.activeRole || user?.userType;
   const isSeller = userRole === 'seller';
   const isAdmin = userRole === 'admin';
+  
+  // Handle deep link navigation
+  useEffect(() => {
+    if (pendingNavigation) {
+      console.log('🔗 Handling pending navigation:', pendingNavigation);
+      setCurrentScreen(pendingNavigation.screen);
+      setNavigationParams(pendingNavigation.params);
+      clearPendingNavigation();
+    }
+  }, [pendingNavigation, clearPendingNavigation]);
   
   // Force refresh when user changes (only when role actually changes)
   useEffect(() => {

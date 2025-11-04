@@ -185,39 +185,36 @@ app.get('/api/stats', async (req, res) => {
     
     console.log('📊 Stats API called');
     
-    // Get real counts from database
-    const [totalUsers, totalProducts, totalCities, blockedUsers] = await Promise.all([
-      User.countDocuments({}), // Tüm kullanıcılar (isActive kontrolü yok)
-      Product.countDocuments({ isApproved: true }), // Onaylı ürünler (isAvailable kontrolü yok)
-      Location.countDocuments({ isActive: true }),
-      User.countDocuments({ isActive: false }) // Bloklu kullanıcılar
+    // Admin dashboard ile aynı sorguları kullan
+    const [totalUsers, totalProducts, totalCities] = await Promise.all([
+      User.countDocuments(),  // Admin dashboard ile aynı - filtre yok
+      Product.countDocuments(), // Tüm ürünler
+      Location.countDocuments({ isActive: true })
     ]);
     
-    // Aktif kullanıcı = Toplam - Bloklu
-    const activeUsers = totalUsers - blockedUsers;
+    // Onaylı ürünler
+    const approvedProducts = await Product.countDocuments({ isApproved: true });
     
-    console.log('📊 Raw counts - Total Users:', totalUsers, 'Blocked:', blockedUsers, 'Active:', activeUsers);
-    console.log('📊 Products:', totalProducts, 'Cities:', totalCities);
-    
-    // Get unique categories count
-    const categories = await Product.distinct('category', { isApproved: true });
+    // Kategori sayısı
+    const categories = await Product.distinct('category');
     const categoryCount = categories.length;
     
-    // Gerçek sayıları göster - yuvarlama YOK!
+    console.log('📊 Real DB counts:');
+    console.log('   - Total Users:', totalUsers);
+    console.log('   - Total Products:', totalProducts);
+    console.log('   - Approved Products:', approvedProducts);
+    console.log('   - Cities:', totalCities);
+    console.log('   - Categories:', categoryCount);
+    
+    // Gerçek sayıları göster - admin paneli ile aynı
     const stats = {
-      users: activeUsers > 0 ? activeUsers : totalUsers, // Aktif kullanıcılar veya toplam
-      products: totalProducts,
+      users: totalUsers,
+      products: approvedProducts,  // Sadece onaylı ürünleri göster
       cities: totalCities,
-      categories: categoryCount,
-      // Debug bilgisi
-      _debug: {
-        totalUsers: totalUsers,
-        activeUsers: activeUsers,
-        blockedUsers: blockedUsers
-      }
+      categories: categoryCount
     };
     
-    console.log('📊 Sending real stats:', stats);
+    console.log('📊 Sending stats:', stats);
     
     res.json(stats);
   } catch (error) {

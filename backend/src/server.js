@@ -186,13 +186,18 @@ app.get('/api/stats', async (req, res) => {
     console.log('📊 Stats API called');
     
     // Get real counts from database
-    const [totalUsers, totalProducts, totalCities] = await Promise.all([
-      User.countDocuments({ isActive: true }),
-      Product.countDocuments({ isApproved: true, isAvailable: true }),
-      Location.countDocuments({ isActive: true })
+    const [totalUsers, totalProducts, totalCities, blockedUsers] = await Promise.all([
+      User.countDocuments({}), // Tüm kullanıcılar (isActive kontrolü yok)
+      Product.countDocuments({ isApproved: true }), // Onaylı ürünler (isAvailable kontrolü yok)
+      Location.countDocuments({ isActive: true }),
+      User.countDocuments({ isActive: false }) // Bloklu kullanıcılar
     ]);
     
-    console.log('📊 Real DB counts - Users:', totalUsers, 'Products:', totalProducts, 'Cities:', totalCities);
+    // Aktif kullanıcı = Toplam - Bloklu
+    const activeUsers = totalUsers - blockedUsers;
+    
+    console.log('📊 Raw counts - Total Users:', totalUsers, 'Blocked:', blockedUsers, 'Active:', activeUsers);
+    console.log('📊 Products:', totalProducts, 'Cities:', totalCities);
     
     // Get unique categories count
     const categories = await Product.distinct('category', { isApproved: true });
@@ -200,13 +205,19 @@ app.get('/api/stats', async (req, res) => {
     
     // Gerçek sayıları göster - yuvarlama YOK!
     const stats = {
-      users: totalUsers,
+      users: activeUsers > 0 ? activeUsers : totalUsers, // Aktif kullanıcılar veya toplam
       products: totalProducts,
       cities: totalCities,
-      categories: categoryCount
+      categories: categoryCount,
+      // Debug bilgisi
+      _debug: {
+        totalUsers: totalUsers,
+        activeUsers: activeUsers,
+        blockedUsers: blockedUsers
+      }
     };
     
-    console.log('📊 Sending real stats (no rounding):', stats);
+    console.log('📊 Sending real stats:', stats);
     
     res.json(stats);
   } catch (error) {

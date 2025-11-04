@@ -917,32 +917,8 @@
             }, 16);
         };
 
-        // Track if stats animation has started
-        let statsAnimated = false;
-
-        // Start stats animation
-        function startStatsAnimation() {
-            if (statsAnimated) return;
-            statsAnimated = true;
-            
-            const userEl = document.getElementById('stat-users');
-            const productEl = document.getElementById('stat-products');
-            const cityEl = document.getElementById('stat-cities');
-            const categoryEl = document.getElementById('stat-categories');
-            
-            const userCount = parseInt(userEl.getAttribute('data-count')) || 1000;
-            const productCount = parseInt(productEl.getAttribute('data-count')) || 500;
-            const cityCount = parseInt(cityEl.getAttribute('data-count')) || 81;
-            const categoryCount = parseInt(categoryEl.getAttribute('data-count')) || 10;
-            
-            setTimeout(() => animateCounter(userEl, userCount), 100);
-            setTimeout(() => animateCounter(productEl, productCount), 200);
-            setTimeout(() => animateCounter(cityEl, cityCount), 300);
-            setTimeout(() => animateCounter(categoryEl, categoryCount), 400);
-        }
-
-        // Load real stats from API
-        async function loadStats() {
+        // Load and animate stats
+        async function loadAndAnimateStats() {
             try {
                 console.log('📊 Loading stats from API...');
                 const response = await fetch('/api/stats');
@@ -954,41 +930,38 @@
                 const stats = await response.json();
                 console.log('✅ Stats loaded:', stats);
                 
-                // Update data-count attributes with real values
-                document.getElementById('stat-users').setAttribute('data-count', stats.users || 1000);
-                document.getElementById('stat-products').setAttribute('data-count', stats.products || 500);
-                document.getElementById('stat-cities').setAttribute('data-count', stats.cities || 81);
-                document.getElementById('stat-categories').setAttribute('data-count', stats.categories || 10);
+                // Get elements
+                const userEl = document.getElementById('stat-users');
+                const productEl = document.getElementById('stat-products');
+                const cityEl = document.getElementById('stat-cities');
+                const categoryEl = document.getElementById('stat-categories');
+                
+                // Animate immediately with real data
+                setTimeout(() => animateCounter(userEl, stats.users || 1000), 500);
+                setTimeout(() => animateCounter(productEl, stats.products || 500), 600);
+                setTimeout(() => animateCounter(cityEl, stats.cities || 81), 700);
+                setTimeout(() => animateCounter(categoryEl, stats.categories || 10), 800);
                 
             } catch (error) {
                 console.error('❌ Error loading stats:', error);
+                // Fallback animation with default values
+                const userEl = document.getElementById('stat-users');
+                const productEl = document.getElementById('stat-products');
+                const cityEl = document.getElementById('stat-cities');
+                const categoryEl = document.getElementById('stat-categories');
+                
+                setTimeout(() => animateCounter(userEl, 1000), 500);
+                setTimeout(() => animateCounter(productEl, 500), 600);
+                setTimeout(() => animateCounter(cityEl, 81), 700);
+                setTimeout(() => animateCounter(categoryEl, 10), 800);
             }
         }
 
-        // Load stats when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                loadStats();
-                // Observer will trigger animation when stats section is visible
-            });
-        } else {
-            loadStats();
-        }
-
-        // Stats counter animation - trigger on scroll into view
-        const statsObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    startStatsAnimation();
-                    statsObserver.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.3 });
-
-        const statsSection = document.querySelector('.stats');
-        if (statsSection) {
-            statsObserver.observe(statsSection);
-        }
+        // Wait for DOM and stats section to be visible, then load
+        window.addEventListener('load', () => {
+            // Small delay to ensure everything is ready
+            setTimeout(loadAndAnimateStats, 300);
+        });
 
         // Mobile menu (placeholder)
         const mobileMenuBtn = document.querySelector('.mobile-menu-btn');

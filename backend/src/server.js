@@ -196,36 +196,27 @@ app.get('/api/stats', async (req, res) => {
     
     // Get unique categories count
     const categories = await Product.distinct('category', { isApproved: true });
-    const categoryCount = categories.length || 10;
+    const categoryCount = categories.length;
     
-    // Sayıları daha etkileyici göstermek için yuvarlama
-    // Örn: 127 → 150, 487 → 500
-    const displayUsers = totalUsers > 100 ? Math.ceil(totalUsers / 50) * 50 : totalUsers || 100;
-    const displayProducts = totalProducts > 50 ? Math.ceil(totalProducts / 10) * 10 : totalProducts || 50;
-    
+    // Gerçek sayıları göster - yuvarlama YOK!
     const stats = {
-      users: displayUsers,
-      products: displayProducts,
-      cities: totalCities || 81,
-      categories: categoryCount,
-      // Gerçek sayıları da gönder (debug için)
-      _debug: {
-        realUsers: totalUsers,
-        realProducts: totalProducts
-      }
+      users: totalUsers,
+      products: totalProducts,
+      cities: totalCities,
+      categories: categoryCount
     };
     
-    console.log('📊 Sending stats:', stats);
+    console.log('📊 Sending real stats (no rounding):', stats);
     
     res.json(stats);
   } catch (error) {
     console.error('❌ Stats error:', error);
-    // Fallback değerler dön (hata durumunda)
+    // Fallback değerler dön (hata durumunda) - düşük tutuyoruz
     res.json({
-      users: 100,
-      products: 50,
-      cities: 81,
-      categories: 10
+      users: 0,
+      products: 0,
+      cities: 81,  // Türkiye'de 81 il var, bu kesin
+      categories: 10  // 10 kategori var, bu da kesin
     });
   }
 });

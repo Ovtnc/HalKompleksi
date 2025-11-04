@@ -744,19 +744,19 @@
     <section class="stats">
         <div class="stats-grid">
             <div class="stat-item">
-                <h3 id="stat-users" data-count="1000">0</h3>
+                <h3 id="stat-users" data-count="0">0</h3>
                 <p>Aktif Kullanıcı</p>
             </div>
             <div class="stat-item">
-                <h3 id="stat-products" data-count="500">0</h3>
+                <h3 id="stat-products" data-count="0">0</h3>
                 <p>Aktif İlan</p>
             </div>
             <div class="stat-item">
-                <h3 id="stat-cities" data-count="81">0</h3>
+                <h3 id="stat-cities" data-count="81">81</h3>
                 <p>İl Genelinde</p>
             </div>
             <div class="stat-item">
-                <h3 id="stat-categories" data-count="10">0</h3>
+                <h3 id="stat-categories" data-count="10">10</h3>
                 <p>Kategori</p>
             </div>
         </div>
@@ -916,6 +916,13 @@
                 return;
             }
             
+            // Eğer target 0 ise, hemen 0 göster (animasyon yok)
+            if (target === 0) {
+                element.textContent = '0';
+                console.log('⚠️ No animation for', element.id, '- value is 0');
+                return;
+            }
+            
             const start = 0;
             const increment = target / (duration / 16);
             let current = start;
@@ -985,7 +992,7 @@
                 console.error('❌ Error message:', error.message);
                 console.error('❌ Error stack:', error.stack);
                 
-                // Fallback animation with default values
+                // Fallback animation with realistic values
                 console.log('🔄 Using fallback values...');
                 const userEl = document.getElementById('stat-users');
                 const productEl = document.getElementById('stat-products');
@@ -993,8 +1000,9 @@
                 const categoryEl = document.getElementById('stat-categories');
                 
                 if (userEl && productEl && cityEl && categoryEl) {
-                    setTimeout(() => animateCounter(userEl, 1000), 500);
-                    setTimeout(() => animateCounter(productEl, 500), 600);
+                    // API başarısız olsa bile gerçekçi sayılar göster
+                    setTimeout(() => animateCounter(userEl, 0), 500);
+                    setTimeout(() => animateCounter(productEl, 0), 600);
                     setTimeout(() => animateCounter(cityEl, 81), 700);
                     setTimeout(() => animateCounter(categoryEl, 10), 800);
                 } else {

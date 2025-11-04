@@ -12,6 +12,8 @@
     <title>Hal Kompleksi - Çiftçiler ve Alıcılar Buluşuyor</title>
     
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        
         * {
             margin: 0;
             padding: 0;
@@ -19,38 +21,58 @@
         }
         
         :root {
-            --primary: #2ECC71;
-            --primary-dark: #27AE60;
-            --secondary: #3498DB;
-            --dark: #2C3E50;
-            --light: #ECF0F1;
-            --white: #FFFFFF;
-            --gray: #7F8C8D;
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --primary-light: #34d399;
+            --secondary: #3b82f6;
+            --dark: #0f172a;
+            --dark-light: #1e293b;
+            --gray: #64748b;
+            --light: #f1f5f9;
+            --white: #ffffff;
+            --gradient-1: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --gradient-2: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             color: var(--dark);
-            line-height: 1.6;
+            line-height: 1.7;
             overflow-x: hidden;
+            background: var(--white);
+        }
+        
+        /* Smooth Scroll */
+        html {
+            scroll-behavior: smooth;
         }
         
         /* Header */
         .header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: var(--white);
-            padding: 1rem 0;
             position: fixed;
-            width: 100%;
             top: 0;
+            left: 0;
+            right: 0;
             z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .header.scrolled {
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: var(--shadow-lg);
         }
         
         .nav {
-            max-width: 1200px;
+            max-width: 1280px;
             margin: 0 auto;
-            padding: 0 20px;
+            padding: 1.25rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -59,76 +81,160 @@
         .logo {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 24px;
-            font-weight: bold;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .logo-icon {
+            font-size: 2rem;
+            filter: drop-shadow(0 2px 4px rgba(16, 185, 129, 0.3));
         }
         
         .nav-links {
             display: flex;
-            gap: 30px;
+            gap: 2.5rem;
             list-style: none;
         }
         
         .nav-links a {
-            color: var(--white);
+            color: var(--dark);
             text-decoration: none;
-            font-weight: 500;
-            transition: opacity 0.3s;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--gradient-1);
+            transition: width 0.3s ease;
+        }
+        
+        .nav-links a:hover::after {
+            width: 100%;
         }
         
         .nav-links a:hover {
-            opacity: 0.8;
+            color: var(--primary);
+        }
+        
+        /* Mobile Menu Button */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--dark);
         }
         
         /* Hero Section */
         .hero {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: var(--white);
-            padding: 120px 20px 80px;
-            text-align: center;
-            margin-top: 60px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--gradient-1);
+            position: relative;
+            overflow: hidden;
+            padding: 8rem 2rem 4rem;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.15) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
         }
         
         .hero-content {
-            max-width: 800px;
-            margin: 0 auto;
+            max-width: 900px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 0.5rem 1.25rem;
+            border-radius: 50px;
+            color: var(--white);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
         
         .hero h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            line-height: 1.2;
+            font-size: 4rem;
+            font-weight: 900;
+            color: var(--white);
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
         }
         
         .hero p {
-            font-size: 1.3rem;
-            margin-bottom: 2rem;
-            opacity: 0.95;
+            font-size: 1.35rem;
+            color: rgba(255, 255, 255, 0.95);
+            margin-bottom: 3rem;
+            line-height: 1.6;
+            font-weight: 400;
         }
         
         .hero-buttons {
             display: flex;
-            gap: 15px;
+            gap: 1rem;
             justify-content: center;
             flex-wrap: wrap;
         }
         
         .btn {
-            padding: 15px 35px;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            font-weight: 600;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            transition: transform 0.3s, box-shadow 0.3s;
+            gap: 0.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
         }
         
         .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-xl);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
         }
         
         .btn-primary {
@@ -136,250 +242,389 @@
             color: var(--primary);
         }
         
+        .btn-primary:hover {
+            background: var(--light);
+        }
+        
         .btn-outline {
-            background: transparent;
+            background: rgba(255, 255, 255, 0.1);
             color: var(--white);
-            border: 2px solid var(--white);
+            border-color: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
         }
         
         /* Features Section */
         .features {
-            padding: 80px 20px;
-            max-width: 1200px;
+            padding: 8rem 2rem;
+            max-width: 1280px;
             margin: 0 auto;
+            position: relative;
+        }
+        
+        .section-header {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 5rem;
+        }
+        
+        .section-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+            color: var(--primary);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
         }
         
         .section-title {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
+            font-size: 3rem;
+            font-weight: 900;
             color: var(--dark);
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
         }
         
         .section-subtitle {
-            text-align: center;
-            font-size: 1.2rem;
+            font-size: 1.25rem;
             color: var(--gray);
-            margin-bottom: 3rem;
+            line-height: 1.6;
         }
         
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 40px;
-            margin-top: 50px;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
         }
         
         .feature-card {
-            text-align: center;
-            padding: 30px;
-            border-radius: 20px;
             background: var(--white);
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-            transition: transform 0.3s, box-shadow 0.3s;
+            padding: 2.5rem;
+            border-radius: 24px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-1);
+            transform: scaleX(0);
+            transition: transform 0.4s ease;
+        }
+        
+        .feature-card:hover::before {
+            transform: scaleX(1);
         }
         
         .feature-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-xl);
+            border-color: rgba(16, 185, 129, 0.1);
         }
         
         .feature-icon {
-            font-size: 3.5rem;
-            margin-bottom: 1rem;
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
         }
         
         .feature-card h3 {
             font-size: 1.5rem;
-            margin-bottom: 1rem;
+            font-weight: 700;
             color: var(--dark);
+            margin-bottom: 1rem;
         }
         
         .feature-card p {
             color: var(--gray);
-            line-height: 1.8;
+            line-height: 1.7;
+            font-size: 1rem;
         }
         
         /* Stats Section */
         .stats {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: var(--white);
-            padding: 60px 20px;
-            text-align: center;
+            background: var(--gradient-1);
+            padding: 5rem 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stats::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.5;
         }
         
         .stats-grid {
-            max-width: 1000px;
+            max-width: 1280px;
             margin: 0 auto;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 40px;
+            gap: 3rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .stat-item {
+            text-align: center;
         }
         
         .stat-item h3 {
-            font-size: 3rem;
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: var(--white);
             margin-bottom: 0.5rem;
+            line-height: 1;
         }
         
         .stat-item p {
-            font-size: 1.1rem;
-            opacity: 0.9;
+            font-size: 1.125rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
         }
         
         /* How It Works */
         .how-it-works {
-            padding: 80px 20px;
-            background: var(--light);
+            padding: 8rem 2rem;
+            background: linear-gradient(180deg, var(--white) 0%, var(--light) 100%);
         }
         
         .steps {
-            max-width: 1000px;
+            max-width: 1280px;
             margin: 0 auto;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 30px;
-            margin-top: 50px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 3rem;
         }
         
         .step {
             background: var(--white);
-            padding: 30px;
-            border-radius: 15px;
+            padding: 2.5rem;
+            border-radius: 24px;
             text-align: center;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            position: relative;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .step:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
         }
         
         .step-number {
-            width: 60px;
-            height: 60px;
-            background: var(--primary);
+            width: 72px;
+            height: 72px;
+            background: var(--gradient-1);
             color: var(--white);
-            border-radius: 50%;
+            border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.8rem;
-            font-weight: bold;
+            font-size: 2rem;
+            font-weight: 900;
             margin: 0 auto 1.5rem;
+            box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
         }
         
         .step h3 {
-            font-size: 1.3rem;
+            font-size: 1.5rem;
+            font-weight: 700;
             margin-bottom: 1rem;
             color: var(--dark);
         }
         
         .step p {
             color: var(--gray);
+            line-height: 1.7;
         }
         
         /* CTA Section */
         .cta {
-            background: linear-gradient(135deg, var(--secondary) 0%, #2980B9 100%);
-            color: var(--white);
-            padding: 80px 20px;
+            background: var(--gradient-2);
+            padding: 8rem 2rem;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cta::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+        }
+        
+        .cta-content {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
         }
         
         .cta h2 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
+            font-size: 3rem;
+            font-weight: 900;
+            color: var(--white);
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
         }
         
         .cta p {
-            font-size: 1.3rem;
-            margin-bottom: 2rem;
-            opacity: 0.95;
-        }
-        
-        .cta-buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
+            font-size: 1.35rem;
+            color: rgba(255, 255, 255, 0.95);
+            margin-bottom: 3rem;
+            line-height: 1.6;
         }
         
         /* Footer */
         .footer {
             background: var(--dark);
-            color: var(--white);
-            padding: 50px 20px 30px;
-            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            padding: 4rem 2rem 2rem;
         }
         
         .footer-content {
-            max-width: 1200px;
+            max-width: 1280px;
             margin: 0 auto;
         }
         
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .footer-section h4 {
+            color: var(--white);
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+        
         .footer-links {
+            list-style: none;
             display: flex;
-            gap: 30px;
-            justify-content: center;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 0.75rem;
         }
         
         .footer-links a {
-            color: var(--white);
+            color: rgba(255, 255, 255, 0.7);
             text-decoration: none;
-            opacity: 0.8;
-            transition: opacity 0.3s;
+            transition: color 0.3s ease;
+            font-size: 0.95rem;
         }
         
         .footer-links a:hover {
-            opacity: 1;
+            color: var(--primary-light);
         }
         
         .footer-social {
             display: flex;
-            gap: 20px;
-            justify-content: center;
-            margin-bottom: 2rem;
+            gap: 1rem;
+            margin-top: 1.5rem;
         }
         
         .social-icon {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             text-decoration: none;
-            transition: background 0.3s;
+            font-size: 1.25rem;
+            transition: all 0.3s ease;
         }
         
         .social-icon:hover {
             background: var(--primary);
+            transform: translateY(-2px);
+        }
+        
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 2rem;
+            text-align: center;
         }
         
         .copyright {
-            opacity: 0.7;
+            color: rgba(255, 255, 255, 0.6);
             font-size: 0.9rem;
-            margin-top: 2rem;
         }
         
         /* Responsive */
         @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            .hero {
+                padding: 6rem 1.5rem 3rem;
+            }
+            
             .hero h1 {
-                font-size: 2rem;
+                font-size: 2.5rem;
             }
             
             .hero p {
-                font-size: 1.1rem;
+                font-size: 1.125rem;
             }
             
             .section-title {
                 font-size: 2rem;
             }
             
-            .nav-links {
-                display: none;
+            .features,
+            .how-it-works {
+                padding: 4rem 1.5rem;
+            }
+            
+            .cta h2 {
+                font-size: 2rem;
             }
             
             .stat-item h3 {
-                font-size: 2rem;
+                font-size: 2.5rem;
             }
         }
         
@@ -395,25 +640,25 @@
             }
         }
         
-        .feature-card,
-        .step {
-            animation: fadeInUp 0.6s ease-out;
+        .animate-on-scroll {
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out forwards;
         }
         
-        .feature-card:nth-child(1) { animation-delay: 0.1s; }
-        .feature-card:nth-child(2) { animation-delay: 0.2s; }
-        .feature-card:nth-child(3) { animation-delay: 0.3s; }
-        .feature-card:nth-child(4) { animation-delay: 0.4s; }
-        .feature-card:nth-child(5) { animation-delay: 0.5s; }
-        .feature-card:nth-child(6) { animation-delay: 0.6s; }
+        .animate-delay-1 { animation-delay: 0.1s; }
+        .animate-delay-2 { animation-delay: 0.2s; }
+        .animate-delay-3 { animation-delay: 0.3s; }
+        .animate-delay-4 { animation-delay: 0.4s; }
+        .animate-delay-5 { animation-delay: 0.5s; }
+        .animate-delay-6 { animation-delay: 0.6s; }
     </style>
 </head>
 <body>
     <!-- Header -->
-    <header class="header">
+    <header class="header" id="header">
         <nav class="nav">
             <div class="logo">
-                <span>🌿</span>
+                <span class="logo-icon">🌿</span>
                 <span>Hal Kompleksi</span>
             </div>
             <ul class="nav-links">
@@ -421,14 +666,18 @@
                 <li><a href="#how-it-works">Nasıl Çalışır</a></li>
                 <li><a href="#download">İndir</a></li>
             </ul>
+            <button class="mobile-menu-btn">☰</button>
         </nav>
     </header>
 
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-content">
-            <h1>🌾 Türkiye'nin Tarım Pazaryeri</h1>
-            <p>Çiftçiler ve alıcılar arasında köprü kuruyoruz. Taze ürünler, uygun fiyatlar, direkt iletişim.</p>
+            <div class="hero-badge">
+                ✨ Türkiye'nin En Yeni Tarım Platformu
+            </div>
+            <h1>Çiftçi ve Alıcılar<br>Bir Arada</h1>
+            <p>Taze ürünler, uygun fiyatlar, direkt iletişim. Aracısız alışverişin yeni adresi.</p>
             <div class="hero-buttons">
                 <a href="https://play.google.com/store/apps/details?id=com.halkompleksi.app" class="btn btn-primary">
                     🤖 Google Play'den İndir
@@ -442,41 +691,44 @@
 
     <!-- Features Section -->
     <section id="features" class="features">
-        <h2 class="section-title">Neden Hal Kompleksi?</h2>
-        <p class="section-subtitle">Tarım ürünleri alım-satımını dijitalleştiriyoruz</p>
+        <div class="section-header">
+            <span class="section-badge">Özellikler</span>
+            <h2 class="section-title">Neden Hal Kompleksi?</h2>
+            <p class="section-subtitle">Tarım ürünleri alım-satımını dijitalleştiriyor, çiftçi ve alıcıları buluşturuyoruz</p>
+        </div>
         
         <div class="features-grid">
-            <div class="feature-card">
+            <div class="feature-card animate-on-scroll animate-delay-1">
                 <div class="feature-icon">🌿</div>
                 <h3>Geniş Ürün Yelpazesi</h3>
                 <p>Meyve, sebze, gıda, nakliye, kasa ve daha fazlası. İhtiyacınız olan her şey bir arada.</p>
             </div>
             
-            <div class="feature-card">
+            <div class="feature-card animate-on-scroll animate-delay-2">
                 <div class="feature-icon">💰</div>
                 <h3>Şeffaf Fiyatlar</h3>
                 <p>Aracısız direkt alışveriş. En uygun fiyatları karşılaştırın, tasarruf edin.</p>
             </div>
             
-            <div class="feature-card">
+            <div class="feature-card animate-on-scroll animate-delay-3">
                 <div class="feature-icon">📱</div>
                 <h3>Kolay İletişim</h3>
                 <p>Satıcılarla WhatsApp üzerinden hızlıca iletişime geçin, anlaşın.</p>
             </div>
             
-            <div class="feature-card">
+            <div class="feature-card animate-on-scroll animate-delay-4">
                 <div class="feature-icon">📍</div>
                 <h3>Konum Bazlı Arama</h3>
                 <p>Size en yakın satıcıları bulun, nakliye maliyetlerini azaltın.</p>
             </div>
             
-            <div class="feature-card">
+            <div class="feature-card animate-on-scroll animate-delay-5">
                 <div class="feature-icon">⭐</div>
                 <h3>Favoriler</h3>
                 <p>Beğendiğiniz ürünleri kaydedin, satıcıları takip edin.</p>
             </div>
             
-            <div class="feature-card">
+            <div class="feature-card animate-on-scroll animate-delay-6">
                 <div class="feature-icon">📊</div>
                 <h3>Piyasa Raporları</h3>
                 <p>Güncel hal fiyatlarını takip edin, doğru zamanda alışveriş yapın.</p>
@@ -488,19 +740,19 @@
     <section class="stats">
         <div class="stats-grid">
             <div class="stat-item">
-                <h3>1000+</h3>
+                <h3 data-count="1000">0</h3>
                 <p>Aktif Kullanıcı</p>
             </div>
             <div class="stat-item">
-                <h3>500+</h3>
+                <h3 data-count="500">0</h3>
                 <p>Günlük İlan</p>
             </div>
             <div class="stat-item">
-                <h3>81</h3>
+                <h3 data-count="81">0</h3>
                 <p>İl Genelinde</p>
             </div>
             <div class="stat-item">
-                <h3>10+</h3>
+                <h3 data-count="10">0</h3>
                 <p>Kategori</p>
             </div>
         </div>
@@ -508,25 +760,28 @@
 
     <!-- How It Works Section -->
     <section id="how-it-works" class="how-it-works">
-        <h2 class="section-title">Nasıl Çalışır?</h2>
-        <p class="section-subtitle">3 basit adımda al-sat işlemlerinizi tamamlayın</p>
+        <div class="section-header">
+            <span class="section-badge">Nasıl Çalışır</span>
+            <h2 class="section-title">3 Basit Adımda Başlayın</h2>
+            <p class="section-subtitle">Al-sat işlemlerinizi kolayca tamamlayın</p>
+        </div>
         
         <div class="steps">
-            <div class="step">
+            <div class="step animate-on-scroll">
                 <div class="step-number">1</div>
-                <h3>📱 Uygulamayı İndirin</h3>
+                <h3>Uygulamayı İndirin</h3>
                 <p>App Store veya Google Play'den ücretsiz indirin ve hesap oluşturun.</p>
             </div>
             
-            <div class="step">
+            <div class="step animate-on-scroll animate-delay-2">
                 <div class="step-number">2</div>
-                <h3>🔍 Ürün Arayın</h3>
+                <h3>Ürün Arayın</h3>
                 <p>Kategorilere göz atın veya arama yaparak ihtiyacınız olan ürünü bulun.</p>
             </div>
             
-            <div class="step">
+            <div class="step animate-on-scroll animate-delay-4">
                 <div class="step-number">3</div>
-                <h3>💬 İletişime Geçin</h3>
+                <h3>İletişime Geçin</h3>
                 <p>Satıcıyla WhatsApp üzerinden konuşun, anlaşın ve alışverişi tamamlayın.</p>
             </div>
         </div>
@@ -534,44 +789,85 @@
 
     <!-- CTA Section -->
     <section id="download" class="cta">
-        <h2>Hemen Başlayın!</h2>
-        <p>Türkiye'nin en büyük tarım pazaryerine katılın</p>
-        <div class="cta-buttons">
-            <a href="https://play.google.com/store/apps/details?id=com.halkompleksi.app" class="btn btn-primary">
-                🤖 Google Play'den İndir
-            </a>
-            <a href="https://apps.apple.com/app/hal-kompleksi/id" class="btn btn-outline">
-                🍎 App Store'dan İndir
-            </a>
+        <div class="cta-content">
+            <h2>Hemen Başlayın!</h2>
+            <p>Türkiye'nin en büyük tarım pazaryerine katılın</p>
+            <div class="hero-buttons">
+                <a href="https://play.google.com/store/apps/details?id=com.halkompleksi.app" class="btn btn-primary">
+                    🤖 Google Play'den İndir
+                </a>
+                <a href="https://apps.apple.com/app/hal-kompleksi/id" class="btn btn-outline">
+                    🍎 App Store'dan İndir
+                </a>
+            </div>
         </div>
     </section>
 
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-content">
-            <div class="footer-links">
-                <a href="/privacy-policy.html">Gizlilik Politikası</a>
-                <a href="/terms-of-service.html">Kullanım Şartları</a>
-                <a href="mailto:info@halkompleksi.com">İletişim</a>
-                <a href="/api/health">API Status</a>
+            <div class="footer-grid">
+                <div class="footer-section">
+                    <h4>Hal Kompleksi</h4>
+                    <p style="color: rgba(255, 255, 255, 0.6); line-height: 1.7;">
+                        Türkiye'nin tarım ürünleri pazaryeri. Çiftçiler ve alıcıları buluşturuyoruz.
+                    </p>
+                    <div class="footer-social">
+                        <a href="#" class="social-icon">📘</a>
+                        <a href="#" class="social-icon">📸</a>
+                        <a href="#" class="social-icon">🐦</a>
+                        <a href="#" class="social-icon">📱</a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Hızlı Linkler</h4>
+                    <ul class="footer-links">
+                        <li><a href="#features">Özellikler</a></li>
+                        <li><a href="#how-it-works">Nasıl Çalışır</a></li>
+                        <li><a href="#download">Uygulamayı İndir</a></li>
+                        <li><a href="/api/health">API Status</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Yasal</h4>
+                    <ul class="footer-links">
+                        <li><a href="/privacy-policy.html">Gizlilik Politikası</a></li>
+                        <li><a href="/terms-of-service.html">Kullanım Şartları</a></li>
+                        <li><a href="mailto:info@halkompleksi.com">İletişim</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>İletişim</h4>
+                    <ul class="footer-links">
+                        <li><a href="mailto:info@halkompleksi.com">info@halkompleksi.com</a></li>
+                        <li><a href="tel:+905xxxxxxxxx">+90 XXX XXX XX XX</a></li>
+                    </ul>
+                </div>
             </div>
             
-            <div class="footer-social">
-                <a href="#" class="social-icon">📘</a>
-                <a href="#" class="social-icon">📸</a>
-                <a href="#" class="social-icon">🐦</a>
-                <a href="#" class="social-icon">📱</a>
-            </div>
-            
-            <div class="copyright">
-                <p>&copy; 2024 Hal Kompleksi. Tüm hakları saklıdır.</p>
-                <p style="margin-top: 10px; opacity: 0.6;">🌿 Türkiye'nin Tarım Pazaryeri</p>
+            <div class="footer-bottom">
+                <p class="copyright">
+                    &copy; 2024 Hal Kompleksi. Tüm hakları saklıdır.
+                </p>
             </div>
         </div>
     </footer>
 
     <script>
-        // Smooth scrolling for anchor links
+        // Header scroll effect
+        const header = document.getElementById('header');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Smooth scrolling
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
@@ -585,7 +881,7 @@
             });
         });
 
-        // Add fade-in animation on scroll
+        // Intersection Observer for animations
         const observerOptions = {
             threshold: 0.1,
             rootMargin: '0px 0px -50px 0px'
@@ -595,45 +891,42 @@
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
+                    observer.unobserve(entry.target);
                 }
             });
         }, observerOptions);
 
-        // Observe all feature cards and steps
-        document.querySelectorAll('.feature-card, .step').forEach(el => {
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(30px)';
-            el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+        document.querySelectorAll('.animate-on-scroll').forEach(el => {
             observer.observe(el);
         });
 
-        // Update stats with animation
-        function animateValue(element, start, end, duration) {
-            const range = end - start;
-            const increment = end > start ? 1 : -1;
-            const stepTime = Math.abs(Math.floor(duration / range));
+        // Counter animation
+        const animateCounter = (element, target, duration = 2000) => {
+            const start = 0;
+            const increment = target / (duration / 16);
             let current = start;
             
             const timer = setInterval(() => {
                 current += increment;
-                element.textContent = current + '+';
-                if (current === end) {
+                if (current >= target) {
+                    element.textContent = target + '+';
                     clearInterval(timer);
+                } else {
+                    element.textContent = Math.floor(current) + '+';
                 }
-            }, stepTime);
-        }
+            }, 16);
+        };
 
-        // Animate stats when they come into view
+        // Stats counter animation
         const statsObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    const statItems = entry.target.querySelectorAll('.stat-item h3');
-                    statItems.forEach((item, index) => {
-                        const values = [1000, 500, 81, 10];
+                    const counters = entry.target.querySelectorAll('[data-count]');
+                    counters.forEach((counter, index) => {
+                        const target = parseInt(counter.getAttribute('data-count'));
                         setTimeout(() => {
-                            animateValue(item, 0, values[index], 2000);
-                        }, index * 200);
+                            animateCounter(counter, target);
+                        }, index * 100);
                     });
                     statsObserver.unobserve(entry.target);
                 }
@@ -644,7 +937,12 @@
         if (statsSection) {
             statsObserver.observe(statsSection);
         }
+
+        // Mobile menu (placeholder)
+        const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+        mobileMenuBtn?.addEventListener('click', () => {
+            alert('Mobil menü yakında eklenecek!');
+        });
     </script>
 </body>
 </html>
-

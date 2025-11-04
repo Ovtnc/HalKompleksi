@@ -861,9 +861,6 @@
     </footer>
 
     <script>
-        console.log('🎯 HAL KOMPLEKSİ - Script başladı!');
-        console.log('📄 Document ready state:', document.readyState);
-        
         // Header scroll effect
         const header = document.getElementById('header');
         window.addEventListener('scroll', () => {
@@ -909,17 +906,11 @@
 
         // Counter animation
         const animateCounter = (element, target, duration = 2000) => {
-            console.log('🎬 Starting animation for element:', element.id, 'target:', target);
-            
-            if (!element) {
-                console.error('❌ Element not found!');
-                return;
-            }
+            if (!element) return;
             
             // Eğer target 0 ise, hemen 0 göster (animasyon yok)
             if (target === 0) {
                 element.textContent = '0';
-                console.log('⚠️ No animation for', element.id, '- value is 0');
                 return;
             }
             
@@ -931,7 +922,6 @@
                 current += increment;
                 if (current >= target) {
                     element.textContent = target + '+';
-                    console.log('✅ Animation complete for', element.id, ':', target);
                     clearInterval(timer);
                 } else {
                     element.textContent = Math.floor(current) + '+';
@@ -941,26 +931,13 @@
 
         // Load and animate stats
         async function loadAndAnimateStats() {
-            console.log('🚀 loadAndAnimateStats called');
-            
             try {
-                console.log('📊 Loading stats from API...');
-                console.log('🌐 API URL:', '/api/stats');
-                
                 const response = await fetch('/api/stats');
-                console.log('📡 Response status:', response.status);
-                console.log('📡 Response ok:', response.ok);
-                
                 if (!response.ok) {
-                    throw new Error(`Stats API failed with status ${response.status}`);
+                    throw new Error('Stats API failed');
                 }
                 
                 const stats = await response.json();
-                console.log('✅ Stats loaded:', stats);
-                console.log('📊 Users:', stats.users);
-                console.log('📊 Products:', stats.products);
-                console.log('📊 Cities:', stats.cities);
-                console.log('📊 Categories:', stats.categories);
                 
                 // Get elements
                 const userEl = document.getElementById('stat-users');
@@ -968,76 +945,34 @@
                 const cityEl = document.getElementById('stat-cities');
                 const categoryEl = document.getElementById('stat-categories');
                 
-                console.log('🔍 Elements found:', {
-                    userEl: !!userEl,
-                    productEl: !!productEl,
-                    cityEl: !!cityEl,
-                    categoryEl: !!categoryEl
-                });
+                if (!userEl || !productEl || !cityEl || !categoryEl) return;
                 
-                if (!userEl || !productEl || !cityEl || !categoryEl) {
-                    console.error('❌ Some stat elements not found!');
-                    return;
-                }
-                
-                // Animate immediately with real data
-                console.log('🎬 Starting animations...');
-                setTimeout(() => animateCounter(userEl, stats.users || 1000), 500);
-                setTimeout(() => animateCounter(productEl, stats.products || 500), 600);
+                // Animate with real data
+                setTimeout(() => animateCounter(userEl, stats.users || 0), 500);
+                setTimeout(() => animateCounter(productEl, stats.products || 0), 600);
                 setTimeout(() => animateCounter(cityEl, stats.cities || 81), 700);
                 setTimeout(() => animateCounter(categoryEl, stats.categories || 10), 800);
                 
             } catch (error) {
-                console.error('❌ Error loading stats:', error);
-                console.error('❌ Error message:', error.message);
-                console.error('❌ Error stack:', error.stack);
-                
-                // Fallback animation with realistic values
-                console.log('🔄 Using fallback values...');
+                // Fallback animation
                 const userEl = document.getElementById('stat-users');
                 const productEl = document.getElementById('stat-products');
                 const cityEl = document.getElementById('stat-cities');
                 const categoryEl = document.getElementById('stat-categories');
                 
                 if (userEl && productEl && cityEl && categoryEl) {
-                    // API başarısız olsa bile gerçekçi sayılar göster
                     setTimeout(() => animateCounter(userEl, 0), 500);
                     setTimeout(() => animateCounter(productEl, 0), 600);
                     setTimeout(() => animateCounter(cityEl, 81), 700);
                     setTimeout(() => animateCounter(categoryEl, 10), 800);
-                } else {
-                    console.error('❌ Elements not found even for fallback!');
                 }
             }
         }
 
-        // BASIT TEST - Direkt çalıştır
-        console.log('📄 Script loaded, document ready state:', document.readyState);
-        
-        // Hem DOMContentLoaded hem load event'e dinleyici ekle
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('✅ DOMContentLoaded event fired');
-            console.log('🔍 Checking stat elements...');
-            console.log('stat-users element:', document.getElementById('stat-users'));
-            console.log('stat-products element:', document.getElementById('stat-products'));
-        });
-        
+        // Load stats when page is ready
         window.addEventListener('load', () => {
-            console.log('🎉 Window load event fired');
-            console.log('⏰ Calling loadAndAnimateStats in 1 second...');
-            
-            // 1 saniye bekle ki herşey hazır olsun
-            setTimeout(() => {
-                console.log('⏰ NOW calling loadAndAnimateStats...');
-                loadAndAnimateStats();
-            }, 1000);
+            setTimeout(loadAndAnimateStats, 1000);
         });
-        
-        // Eğer sayfa zaten yüklendiyse direkt çalıştır
-        if (document.readyState === 'complete') {
-            console.log('⚡ Page already loaded, calling immediately');
-            setTimeout(loadAndAnimateStats, 500);
-        }
 
         // Mobile menu (placeholder)
         const mobileMenuBtn = document.querySelector('.mobile-menu-btn');

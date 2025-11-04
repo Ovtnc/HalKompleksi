@@ -34,18 +34,12 @@ const initializeCities = async () => {
     const count = await Location.countDocuments();
     
     if (count === 0) {
-      console.log('📍 No cities found in database. Loading cities from Turkiye API...');
-      
       const response = await fetch('https://turkiyeapi.dev/api/v1/provinces');
-      if (!response.ok) {
-        console.error('❌ Failed to fetch cities from Turkiye API');
-        return;
-      }
+      if (!response.ok) return;
       
       const data = await response.json();
       const citiesData = data.data;
       
-      let savedCount = 0;
       for (const cityData of citiesData) {
         try {
           const districts = (cityData.districts || []).map(district => ({
@@ -62,18 +56,13 @@ const initializeCities = async () => {
           });
           
           await newCity.save();
-          savedCount++;
         } catch (error) {
-          console.error(`❌ Error saving city ${cityData.name}:`, error.message);
+          // Silently fail for individual cities
         }
       }
-      
-      console.log(`✅ Loaded ${savedCount} cities successfully`);
-    } else {
-      console.log(`✅ Cities already loaded (${count} cities found)`);
     }
   } catch (error) {
-    console.error('❌ Error initializing cities:', error);
+    // Silently fail - cities will be loaded later if needed
   }
 };
 
@@ -180,8 +169,6 @@ app.get('/api/health', (req, res) => {
 // Public stats endpoint for landing page
 app.get('/api/stats', async (req, res) => {
   try {
-    console.log('📊 Stats API called');
-    
     // Model'leri güvenli şekilde al (zaten yüklendiyse kullan)
     const Product = mongoose.models.Product || require('./models/Product');
     const User = mongoose.models.User || require('./models/User');
@@ -189,8 +176,8 @@ app.get('/api/stats', async (req, res) => {
     
     // Admin dashboard ile aynı sorguları kullan
     const [totalUsers, totalProducts, totalCities] = await Promise.all([
-      User.countDocuments(),  // Admin dashboard ile aynı - filtre yok
-      Product.countDocuments(), // Tüm ürünler
+      User.countDocuments(),
+      Product.countDocuments(),
       Location.countDocuments({ isActive: true })
     ]);
     
@@ -201,32 +188,23 @@ app.get('/api/stats', async (req, res) => {
     const categories = await Product.distinct('category');
     const categoryCount = categories.length;
     
-    console.log('📊 Real DB counts:');
-    console.log('   - Total Users:', totalUsers);
-    console.log('   - Total Products:', totalProducts);
-    console.log('   - Approved Products:', approvedProducts);
-    console.log('   - Cities:', totalCities);
-    console.log('   - Categories:', categoryCount);
-    
-    // Gerçek sayıları göster - admin paneli ile aynı
+    // Gerçek sayıları göster
     const stats = {
       users: totalUsers,
-      products: approvedProducts,  // Sadece onaylı ürünleri göster
+      products: approvedProducts,
       cities: totalCities,
       categories: categoryCount
     };
     
-    console.log('📊 Sending stats:', stats);
-    
     res.json(stats);
   } catch (error) {
-    console.error('❌ Stats error:', error);
-    // Fallback değerler dön (hata durumunda) - düşük tutuyoruz
+    console.error('Stats error:', error.message);
+    // Fallback değerler
     res.json({
       users: 0,
       products: 0,
-      cities: 81,  // Türkiye'de 81 il var, bu kesin
-      categories: 10  // 10 kategori var, bu da kesin
+      cities: 81,
+      categories: 10
     });
   }
 });

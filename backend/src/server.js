@@ -165,6 +165,50 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Public stats endpoint for landing page
+app.get('/api/stats', async (req, res) => {
+  try {
+    const Product = require('./models/Product');
+    const User = require('./models/User');
+    const Location = require('./models/Location');
+    
+    // Get real counts from database
+    const [totalUsers, totalProducts, totalCities] = await Promise.all([
+      User.countDocuments({ isActive: true }),
+      Product.countDocuments({ isApproved: true }),
+      Location.countDocuments({ isActive: true })
+    ]);
+    
+    // Calculate today's products (günlük ilanlar)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayProducts = await Product.countDocuments({
+      isApproved: true,
+      createdAt: { $gte: today }
+    });
+    
+    // Get unique categories count
+    const categories = await Product.distinct('category', { isApproved: true });
+    const categoryCount = categories.length;
+    
+    res.json({
+      users: totalUsers || 1000,
+      products: todayProducts || 50,
+      cities: totalCities || 81,
+      categories: categoryCount || 10
+    });
+  } catch (error) {
+    console.error('Stats error:', error);
+    // Fallback değerler dön (hata durumunda)
+    res.json({
+      users: 1000,
+      products: 50,
+      cities: 81,
+      categories: 10
+    });
+  }
+});
+
 // =============================================================================
 // STATIC FILE SERVING - Resim ve dosya servisi
 // =============================================================================

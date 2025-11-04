@@ -740,19 +740,19 @@
     <section class="stats">
         <div class="stats-grid">
             <div class="stat-item">
-                <h3 data-count="1000">0</h3>
+                <h3 id="stat-users" data-count="1000">0</h3>
                 <p>Aktif Kullanıcı</p>
             </div>
             <div class="stat-item">
-                <h3 data-count="500">0</h3>
+                <h3 id="stat-products" data-count="50">0</h3>
                 <p>Günlük İlan</p>
             </div>
             <div class="stat-item">
-                <h3 data-count="81">0</h3>
+                <h3 id="stat-cities" data-count="81">0</h3>
                 <p>İl Genelinde</p>
             </div>
             <div class="stat-item">
-                <h3 data-count="10">0</h3>
+                <h3 id="stat-categories" data-count="10">0</h3>
                 <p>Kategori</p>
             </div>
         </div>
@@ -842,15 +842,15 @@
                 <div class="footer-section">
                     <h4>İletişim</h4>
                     <ul class="footer-links">
-                        <li><a href="mailto:info@halkompleksi.com">info@halkompleksi.com</a></li>
-                        <li><a href="tel:+905xxxxxxxxx">+90 XXX XXX XX XX</a></li>
+                        <li><a href="mailto:halkompleksitr@gmail.com">halkompleksitr@gmail.com</a></li>
+                       
                     </ul>
                 </div>
             </div>
             
             <div class="footer-bottom">
                 <p class="copyright">
-                    &copy; 2024 Hal Kompleksi. Tüm hakları saklıdır.
+                    &copy; 2025 Hal Kompleksi. Tüm hakları saklıdır.
                 </p>
             </div>
         </div>
@@ -916,6 +916,34 @@
                 }
             }, 16);
         };
+
+        // Load real stats from API
+        async function loadStats() {
+            try {
+                console.log('📊 Loading stats from API...');
+                const response = await fetch('/api/stats');
+                
+                if (!response.ok) {
+                    throw new Error('Stats API failed');
+                }
+                
+                const stats = await response.json();
+                console.log('✅ Stats loaded:', stats);
+                
+                // Update data-count attributes with real values
+                document.getElementById('stat-users').setAttribute('data-count', stats.users || 1000);
+                document.getElementById('stat-products').setAttribute('data-count', stats.products || 50);
+                document.getElementById('stat-cities').setAttribute('data-count', stats.cities || 81);
+                document.getElementById('stat-categories').setAttribute('data-count', stats.categories || 10);
+                
+            } catch (error) {
+                console.error('❌ Error loading stats:', error);
+                // Fallback değerler zaten HTML'de var, hiçbir şey yapmaya gerek yok
+            }
+        }
+
+        // Load stats on page load
+        loadStats();
 
         // Stats counter animation
         const statsObserver = new IntersectionObserver((entries) => {

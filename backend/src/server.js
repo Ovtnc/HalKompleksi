@@ -81,8 +81,19 @@ setTimeout(() => {
   initializeCities().catch(console.error);
 }, 2000);
 
-// Security middleware
-app.use(helmet());
+// Security middleware - CSP'yi web sayfaları için gevşet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+    },
+  },
+}));
 
 // Rate limiting - Development için daha gevşek ayarlar
 const limiter = rateLimit({

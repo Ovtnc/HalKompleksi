@@ -857,6 +857,9 @@
     </footer>
 
     <script>
+        console.log('🎯 HAL KOMPLEKSİ - Script başladı!');
+        console.log('📄 Document ready state:', document.readyState);
+        
         // Header scroll effect
         const header = document.getElementById('header');
         window.addEventListener('scroll', () => {
@@ -996,17 +999,33 @@
             }
         }
 
-        // Wait for DOM and stats section to be visible, then load
+        // BASIT TEST - Direkt çalıştır
         console.log('📄 Script loaded, document ready state:', document.readyState);
+        
+        // Hem DOMContentLoaded hem load event'e dinleyici ekle
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('✅ DOMContentLoaded event fired');
+            console.log('🔍 Checking stat elements...');
+            console.log('stat-users element:', document.getElementById('stat-users'));
+            console.log('stat-products element:', document.getElementById('stat-products'));
+        });
         
         window.addEventListener('load', () => {
             console.log('🎉 Window load event fired');
-            // Small delay to ensure everything is ready
+            console.log('⏰ Calling loadAndAnimateStats in 1 second...');
+            
+            // 1 saniye bekle ki herşey hazır olsun
             setTimeout(() => {
-                console.log('⏰ Calling loadAndAnimateStats...');
+                console.log('⏰ NOW calling loadAndAnimateStats...');
                 loadAndAnimateStats();
-            }, 300);
+            }, 1000);
         });
+        
+        // Eğer sayfa zaten yüklendiyse direkt çalıştır
+        if (document.readyState === 'complete') {
+            console.log('⚡ Page already loaded, calling immediately');
+            setTimeout(loadAndAnimateStats, 500);
+        }
 
         // Mobile menu (placeholder)
         const mobileMenuBtn = document.querySelector('.mobile-menu-btn');

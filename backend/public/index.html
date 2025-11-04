@@ -902,6 +902,13 @@
 
         // Counter animation
         const animateCounter = (element, target, duration = 2000) => {
+            console.log('🎬 Starting animation for element:', element.id, 'target:', target);
+            
+            if (!element) {
+                console.error('❌ Element not found!');
+                return;
+            }
+            
             const start = 0;
             const increment = target / (duration / 16);
             let current = start;
@@ -910,6 +917,7 @@
                 current += increment;
                 if (current >= target) {
                     element.textContent = target + '+';
+                    console.log('✅ Animation complete for', element.id, ':', target);
                     clearInterval(timer);
                 } else {
                     element.textContent = Math.floor(current) + '+';
@@ -919,16 +927,26 @@
 
         // Load and animate stats
         async function loadAndAnimateStats() {
+            console.log('🚀 loadAndAnimateStats called');
+            
             try {
                 console.log('📊 Loading stats from API...');
+                console.log('🌐 API URL:', '/api/stats');
+                
                 const response = await fetch('/api/stats');
+                console.log('📡 Response status:', response.status);
+                console.log('📡 Response ok:', response.ok);
                 
                 if (!response.ok) {
-                    throw new Error('Stats API failed');
+                    throw new Error(`Stats API failed with status ${response.status}`);
                 }
                 
                 const stats = await response.json();
                 console.log('✅ Stats loaded:', stats);
+                console.log('📊 Users:', stats.users);
+                console.log('📊 Products:', stats.products);
+                console.log('📊 Cities:', stats.cities);
+                console.log('📊 Categories:', stats.categories);
                 
                 // Get elements
                 const userEl = document.getElementById('stat-users');
@@ -936,7 +954,20 @@
                 const cityEl = document.getElementById('stat-cities');
                 const categoryEl = document.getElementById('stat-categories');
                 
+                console.log('🔍 Elements found:', {
+                    userEl: !!userEl,
+                    productEl: !!productEl,
+                    cityEl: !!cityEl,
+                    categoryEl: !!categoryEl
+                });
+                
+                if (!userEl || !productEl || !cityEl || !categoryEl) {
+                    console.error('❌ Some stat elements not found!');
+                    return;
+                }
+                
                 // Animate immediately with real data
+                console.log('🎬 Starting animations...');
                 setTimeout(() => animateCounter(userEl, stats.users || 1000), 500);
                 setTimeout(() => animateCounter(productEl, stats.products || 500), 600);
                 setTimeout(() => animateCounter(cityEl, stats.cities || 81), 700);
@@ -944,23 +975,37 @@
                 
             } catch (error) {
                 console.error('❌ Error loading stats:', error);
+                console.error('❌ Error message:', error.message);
+                console.error('❌ Error stack:', error.stack);
+                
                 // Fallback animation with default values
+                console.log('🔄 Using fallback values...');
                 const userEl = document.getElementById('stat-users');
                 const productEl = document.getElementById('stat-products');
                 const cityEl = document.getElementById('stat-cities');
                 const categoryEl = document.getElementById('stat-categories');
                 
-                setTimeout(() => animateCounter(userEl, 1000), 500);
-                setTimeout(() => animateCounter(productEl, 500), 600);
-                setTimeout(() => animateCounter(cityEl, 81), 700);
-                setTimeout(() => animateCounter(categoryEl, 10), 800);
+                if (userEl && productEl && cityEl && categoryEl) {
+                    setTimeout(() => animateCounter(userEl, 1000), 500);
+                    setTimeout(() => animateCounter(productEl, 500), 600);
+                    setTimeout(() => animateCounter(cityEl, 81), 700);
+                    setTimeout(() => animateCounter(categoryEl, 10), 800);
+                } else {
+                    console.error('❌ Elements not found even for fallback!');
+                }
             }
         }
 
         // Wait for DOM and stats section to be visible, then load
+        console.log('📄 Script loaded, document ready state:', document.readyState);
+        
         window.addEventListener('load', () => {
+            console.log('🎉 Window load event fired');
             // Small delay to ensure everything is ready
-            setTimeout(loadAndAnimateStats, 300);
+            setTimeout(() => {
+                console.log('⏰ Calling loadAndAnimateStats...');
+                loadAndAnimateStats();
+            }, 300);
         });
 
         // Mobile menu (placeholder)

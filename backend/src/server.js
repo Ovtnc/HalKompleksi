@@ -183,6 +183,8 @@ app.get('/api/stats', async (req, res) => {
     const User = require('./models/User');
     const Location = require('./models/Location');
     
+    console.log('📊 Stats API called');
+    
     // Get real counts from database
     const [totalUsers, totalProducts, totalCities] = await Promise.all([
       User.countDocuments({ isActive: true }),
@@ -190,21 +192,37 @@ app.get('/api/stats', async (req, res) => {
       Location.countDocuments({ isActive: true })
     ]);
     
+    console.log('📊 Real DB counts - Users:', totalUsers, 'Products:', totalProducts, 'Cities:', totalCities);
+    
     // Get unique categories count
     const categories = await Product.distinct('category', { isApproved: true });
-    const categoryCount = categories.length;
+    const categoryCount = categories.length || 10;
     
-    res.json({
-      users: totalUsers || 1000,
-      products: totalProducts || 500,  // Toplam aktif ilanlar
+    // Sayıları daha etkileyici göstermek için yuvarlama
+    // Örn: 127 → 150, 487 → 500
+    const displayUsers = totalUsers > 100 ? Math.ceil(totalUsers / 50) * 50 : totalUsers || 100;
+    const displayProducts = totalProducts > 50 ? Math.ceil(totalProducts / 10) * 10 : totalProducts || 50;
+    
+    const stats = {
+      users: displayUsers,
+      products: displayProducts,
       cities: totalCities || 81,
-      categories: categoryCount || 10
-    });
+      categories: categoryCount,
+      // Gerçek sayıları da gönder (debug için)
+      _debug: {
+        realUsers: totalUsers,
+        realProducts: totalProducts
+      }
+    };
+    
+    console.log('📊 Sending stats:', stats);
+    
+    res.json(stats);
   } catch (error) {
-    console.error('Stats error:', error);
+    console.error('❌ Stats error:', error);
     // Fallback değerler dön (hata durumunda)
     res.json({
-      users: 1000,
+      users: 100,
       products: 50,
       cities: 81,
       categories: 10

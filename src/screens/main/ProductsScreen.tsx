@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -82,7 +82,7 @@ const ProductsScreen = ({ navigation, route }: ProductsScreenProps) => {
       console.log('❌ PRODUCTS: No search query, category, or filter found, loading all products');
       loadProducts();
     }
-  }, [route?.params?.searchQuery, route?.params?.category, route?.params?.filter]);
+  }, [route?.params?.searchQuery, route?.params?.category, route?.params?.filter, loadProducts]);
 
   const loadInitialData = async () => {
     try {
@@ -99,7 +99,8 @@ const ProductsScreen = ({ navigation, route }: ProductsScreenProps) => {
     }
   };
 
-  const loadProducts = async () => {
+  // Memoize loadProducts to prevent infinite loops
+  const loadProducts = useCallback(async () => {
     try {
       setLoading(true);
       console.log('🔄 PRODUCTS: Loading all products');
@@ -116,7 +117,7 @@ const ProductsScreen = ({ navigation, route }: ProductsScreenProps) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handleSearch = async (query: string) => {
     try {

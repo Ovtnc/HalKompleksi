@@ -348,3 +348,4 @@ Bu checklist'i tamamladığınızda, uygulamanız App Store'da yayına girmeye h
 
 **Son hatırlatma:** SSL kurulumu ZORUNLU, bu olmadan Apple kesinlikle reddeder! 🔒
 
+

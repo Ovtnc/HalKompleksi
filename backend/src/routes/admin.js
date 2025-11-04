@@ -580,4 +580,93 @@ router.get('/users/:userId/products', [auth, adminOnly], async (req, res) => {
   }
 });
 
+// @route   POST /api/admin/load-cities
+// @desc    Load Turkish cities and districts from Turkiye API
+// @access  Public (Temporarily for setup)
+router.post('/load-cities', async (req, res) => {
+  try {
+    console.log('🏙️ Admin: Loading cities from Turkiye API...');
+    
+    // Import Location model
+    const Location = require('../models/Location');
+    
+    // Fetch data from Turkiye API
+    const response = await fetch('https://turkiyeapi.dev/api/v1/provinces');
+    
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+    
+    const data = await response.json();
+    const citiesData = data.data;
+    
+    console.log(`✅ Fetched ${citiesData.length} cities from API`);
+    
+    let savedCount = 0;
+    let updatedCount = 0;
+    let errorCount = 0;
+    
+    // Save each city to database
+    for (const cityData of citiesData) {
+      try {
+        // Check if city already exists
+        const existingCity = await Location.findOne({ name: cityData.name });
+        
+        // Prepare districts
+        const districts = (cityData.districts || []).map(district => ({
+          name: district.name,
+          isActive: true,
+          createdAt: new Date()
+        }));
+        
+        if (existingCity) {
+          // Update existing city
+          existingCity.code = cityData.id.toString().padStart(2, '0');
+          existingCity.districts = districts;
+          existingCity.isActive = true;
+          existingCity.updatedAt = new Date();
+          await existingCity.save();
+          updatedCount++;
+          console.log(`🔄 Updated: ${cityData.name} (${districts.length} districts)`);
+        } else {
+          // Create new city
+          const newCity = new Location({
+            name: cityData.name,
+            code: cityData.id.toString().padStart(2, '0'),
+            districts: districts,
+            isActive: true
+          });
+          await newCity.save();
+          savedCount++;
+          console.log(`✅ Saved: ${cityData.name} (${districts.length} districts)`);
+        }
+      } catch (error) {
+        errorCount++;
+        console.error(`❌ Error processing ${cityData.name}:`, error.message);
+      }
+    }
+    
+    // Verify the data
+    const totalCities = await Location.countDocuments({ isActive: true });
+    
+    res.json({
+      success: true,
+      message: 'Cities loaded successfully',
+      stats: {
+        newCities: savedCount,
+        updatedCities: updatedCount,
+        errors: errorCount,
+        totalCities: totalCities
+      }
+    });
+  } catch (error) {
+    console.error('❌ Load cities error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to load cities', 
+      error: error.message 
+    });
+  }
+});
+
 module.exports = router;

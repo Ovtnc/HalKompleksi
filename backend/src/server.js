@@ -26,6 +26,61 @@ const PORT = urlConfig.PORT;
 // Connect to MongoDB
 connectDB();
 
+// Initialize cities on startup (if not exists)
+const initializeCities = async () => {
+  try {
+    const Location = require('./models/Location');
+    const count = await Location.countDocuments();
+    
+    if (count === 0) {
+      console.log('📍 No cities found in database. Loading cities from Turkiye API...');
+      
+      const response = await fetch('https://turkiyeapi.dev/api/v1/provinces');
+      if (!response.ok) {
+        console.error('❌ Failed to fetch cities from Turkiye API');
+        return;
+      }
+      
+      const data = await response.json();
+      const citiesData = data.data;
+      
+      let savedCount = 0;
+      for (const cityData of citiesData) {
+        try {
+          const districts = (cityData.districts || []).map(district => ({
+            name: district.name,
+            isActive: true,
+            createdAt: new Date()
+          }));
+          
+          const newCity = new Location({
+            name: cityData.name,
+            code: cityData.id.toString().padStart(2, '0'),
+            districts: districts,
+            isActive: true
+          });
+          
+          await newCity.save();
+          savedCount++;
+        } catch (error) {
+          console.error(`❌ Error saving city ${cityData.name}:`, error.message);
+        }
+      }
+      
+      console.log(`✅ Loaded ${savedCount} cities successfully`);
+    } else {
+      console.log(`✅ Cities already loaded (${count} cities found)`);
+    }
+  } catch (error) {
+    console.error('❌ Error initializing cities:', error);
+  }
+};
+
+// Initialize cities after database connection
+setTimeout(() => {
+  initializeCities().catch(console.error);
+}, 2000);
+
 // Security middleware
 app.use(helmet());
 
@@ -87,7 +142,9 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Logging middleware
 app.use(morgan('combined'));
 
-// Routes
+// =============================================================================
+// API ROUTES - Önce API route'ları tanımla (öncelik sırası önemli!)
+// =============================================================================
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
@@ -99,12 +156,6 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/market-reports', marketReportRoutes);
 app.use('/api/categories', categoryRoutes);
 
-// Static file serving for uploads
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-app.use('/uploads/profiles', express.static(path.join(__dirname, '../uploads/profiles')));
-app.use('/uploads/products', express.static(path.join(__dirname, '../uploads/products')));
-app.use('/uploads/market-reports', express.static(path.join(__dirname, '../uploads/market-reports')));
-
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({
@@ -114,15 +165,69 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
+// =============================================================================
+// STATIC FILE SERVING - Resim ve dosya servisi
+// =============================================================================
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads/profiles', express.static(path.join(__dirname, '../uploads/profiles')));
+app.use('/uploads/products', express.static(path.join(__dirname, '../uploads/products')));
+app.use('/uploads/market-reports', express.static(path.join(__dirname, '../uploads/market-reports')));
+
+// =============================================================================
+// WEBSITE ROUTES - En son web sayfaları (catch-all olmaması için spesifik)
+// Not: Bu route'lar en sonda olmalı ki API route'ları ile çakışmasın
+// =============================================================================
+
+// Apple App Site Association for iOS Universal Links (API gibi davranır)
+app.get('/.well-known/apple-app-site-association', (req, res) => {
   res.json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development',
-    version: '1.0.0'
+    applinks: {
+      apps: [],
+      details: [
+        {
+          appID: 'TEAM_ID.com.halkompleksi.app',
+          paths: ['/product/*']
+        }
+      ]
+    }
   });
+});
+
+// Android assetlinks.json for App Links (API gibi davranır)
+app.get('/.well-known/assetlinks.json', (req, res) => {
+  res.json([
+    {
+      relation: ['delegate_permission/common.handle_all_urls'],
+      target: {
+        namespace: 'android_app',
+        package_name: 'com.halkompleksi.app',
+        sha256_cert_fingerprints: [
+          'YOUR_SHA256_FINGERPRINT_HERE'
+        ]
+      }
+    }
+  ]);
+});
+
+// Privacy Policy page (spesifik route - API'den önce gelmesi sorun değil)
+app.get('/privacy-policy.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/privacy-policy.html'));
+});
+
+// Terms of Service page (spesifik route)
+app.get('/terms-of-service.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/terms-of-service.html'));
+});
+
+// Web product route for universal links (spesifik route)
+// /product/:productId ile /api/products ÇAKIŞMAZ (farklı path'ler)
+app.get('/product/:productId', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/product.html'));
+});
+
+// Landing page - root route (en son, catch-all gibi)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 // Error handling middleware

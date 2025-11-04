@@ -2,6 +2,9 @@
 // 🌐 BASIT URL YAPISI - HER ZAMAN AYNI SERVER
 // ============================================
 
+// TypeScript global declaration for React Native's __DEV__
+declare const __DEV__: boolean;
+
 // 🎯 CANLI SUNUCU - DOMAIN (Natro DNS)
 // ⚠️ PRODUCTION: HTTPS ZORUNLU (TestFlight/App Store için)
 const API_BASE_URL = 'https://halkompleksi.com/api';
@@ -35,15 +38,16 @@ export const ENV = {
   // 📱 App Configuration
   APP_NAME: 'Hal Kompleksi',
   APP_VERSION: '1.0.0',
-  
+
   // 🔧 Debug Mode
   IS_DEV: __DEV__,
-  
+
   // 📝 Logging
   ENABLE_LOGGING: __DEV__,
-  
+
   // 🔗 Helper methods
   getProductUrl: (productId: string) => `${WEB_BASE_URL}/product/${productId}`,
+  getProductDeepLink: (productId: string) => `halkompleksi://product/${productId}`,
   getApiUrl: (endpoint: string) => `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`,
   getWebUrl: (path: string) => `${WEB_BASE_URL}${path.startsWith('/') ? path : '/' + path}`,
 };

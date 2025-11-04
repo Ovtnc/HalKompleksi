@@ -365,3 +365,4 @@ Bu formu doldurup kaydettiğinizde, bir engel daha aşılmış olacak! 🚀
 
 **Not:** Terms of Service HTML sayfası ayrı bir dosyada hazırlandı: `terms-of-service.html`
 
+

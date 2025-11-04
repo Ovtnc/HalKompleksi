@@ -847,3 +847,4 @@ eas build:view [BUILD_ID]  # Detaylı log
 
 **Başarılar! 🎉 Google Play'de görüşmek üzere!** 🤖
 
+

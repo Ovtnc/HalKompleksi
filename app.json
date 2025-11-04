@@ -2,6 +2,7 @@
   "expo": {
     "name": "Hal Kompleksi",
     "slug": "hal-kompleksi",
+    "scheme": "halkompleksi",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -24,6 +25,7 @@
       "requireFullScreen": false,
       "userInterfaceStyle": "light",
       "backgroundColor": "#FFFFFF",
+      "associatedDomains": ["applinks:halkompleksi.com"],
       "splash": {
         "image": "./assets/icon.png",
         "resizeMode": "contain",
@@ -69,6 +71,20 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "RECORD_AUDIO"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "halkompleksi.com",
+              "pathPrefix": "/product"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
       ]
     },
     "web": {

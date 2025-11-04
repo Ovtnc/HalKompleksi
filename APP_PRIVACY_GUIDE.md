@@ -508,3 +508,4 @@ Bu formu doğru doldurduğunuzda, App Store incelemesine göndermek için bir ad
 
 **Önemli:** Privacy Policy mutlaka hazırlanmalı ve aktif bir URL'de yayınlanmalı!
 
+

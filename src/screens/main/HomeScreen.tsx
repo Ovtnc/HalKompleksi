@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -34,20 +34,8 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
   const [productsLoading, setProductsLoading] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  // Auto-refresh products when user profile is updated (initialized after function declaration)
-
-  const loadData = async () => {
-    await Promise.all([
-      loadProducts(),
-      loadCategories()
-    ]);
-  };
-
-  const loadProducts = async () => {
+  // Memoize loadProducts to prevent infinite loops
+  const loadProducts = useCallback(async () => {
     try {
       setProductsLoading(true);
       console.log('🔄 Loading products from backend...');
@@ -74,12 +62,21 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
     } finally {
       setProductsLoading(false);
     }
-  };
+  }, []); // Empty dependency array - function won't change
 
-  // Initialize auto-refresh now that loadProducts is defined
-  useProductRefresh(loadProducts);
+  const loadData = useCallback(async () => {
+    await Promise.all([
+      loadProducts(),
+      loadCategories()
+    ]);
+  }, [loadProducts, loadCategories]);
 
-  const loadCategories = async () => {
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Memoize loadCategories to prevent infinite loops
+  const loadCategories = useCallback(async () => {
     try {
       setCategoriesLoading(true);
       console.log('🔄 Loading categories from backend...');
@@ -96,7 +93,10 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
     } finally {
       setCategoriesLoading(false);
     }
-  };
+  }, []);
+
+  // Auto-refresh products when user profile is updated
+  useProductRefresh(loadProducts);
 
   const handleSearch = () => {
     console.log('🔍 HOMESCREEN: Handle search called');

@@ -566,10 +566,15 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
     return ENV.getProductUrl(productId || '');
   }, [productId]);
 
-  // Paylaşım mesajı oluştur
+  // Ürün Deep Link oluştur
+  const getProductDeepLink = useCallback(() => {
+    return ENV.getProductDeepLink(productId || '');
+  }, [productId]);
+
+  // Paylaşım mesajı oluştur (Universal Link ile)
   const getShareMessage = useCallback(() => {
-    const url = getProductUrl();
-    return `🌿 ${product?.title || 'Ürün'}\n\n💰 Fiyat: ${product?.price || 0} ${product?.currency || '₺'}/${product?.unit || 'kg'}\n\n📦 Stok: ${product?.stock || 0} ${product?.unit || 'kg'}\n📍 Konum: ${locationString}\n\n🔗 Detaylar için: ${url}\n\n📱 Hal Kompleksi`;
+    const webUrl = getProductUrl();
+    return `🌿 ${product?.title || 'Ürün'}\n\n💰 Fiyat: ${product?.price || 0} ${product?.currency || '₺'}/${product?.unit || 'kg'}\n📦 Stok: ${product?.stock || 0} ${product?.unit || 'kg'}\n📍 Konum: ${locationString}\n\n👉 Ürünü görüntüle: ${webUrl}\n\n📱 Hal Kompleksi - Çiftçiler ve Alıcılar Buluşuyor`;
   }, [product, locationString, getProductUrl]);
 
   // Paylaşım (Native Share Sheet)

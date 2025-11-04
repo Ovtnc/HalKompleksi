@@ -1152,11 +1152,58 @@ export const marketReportsAPI = {
 export const locationsAPI = {
   // Get all cities
   getCities: async () => {
-    const response = await fetch(`${API_BASE_URL}/locations/cities`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch cities');
+    try {
+      const url = `${API_BASE_URL}/locations/cities`;
+      console.log('🌐 Fetching cities from:', url);
+      console.log('🌐 API_BASE_URL:', API_BASE_URL);
+      
+      const response = await fetchWithTimeout(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }, 30000); // 30 second timeout - increased for slow connections
+      
+      console.log('📡 Cities response status:', response.status);
+      console.log('📡 Cities response ok:', response.ok);
+      console.log('📡 Cities response headers:', JSON.stringify(Object.fromEntries(response.headers.entries())));
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Failed to fetch cities, status:', response.status);
+        console.error('❌ Error response:', errorText);
+        throw new Error(`Failed to fetch cities: ${response.status} - ${errorText}`);
+      }
+      
+      const responseText = await response.text();
+      console.log('📄 Raw response (first 300 chars):', responseText.substring(0, 300));
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('❌ Failed to parse JSON:', parseError);
+        console.error('❌ Response text:', responseText);
+        throw new Error('Invalid JSON response from server');
+      }
+      
+      console.log('✅ Cities data received, type:', typeof data);
+      console.log('✅ Cities data is array:', Array.isArray(data));
+      console.log('✅ Cities count:', Array.isArray(data) ? data.length : 'not an array');
+      
+      if (Array.isArray(data) && data.length > 0) {
+        console.log('✅ First 3 cities:', data.slice(0, 3).map((c: any) => c.name || c));
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('❌ locationsAPI.getCities error:', error);
+      if (error instanceof Error) {
+        console.error('❌ Error message:', error.message);
+        console.error('❌ Error stack:', error.stack);
+      }
+      throw error;
     }
-    return response.json();
   },
 
   // Get districts for a city

@@ -175,6 +175,11 @@ const categoryFields = {
 const AddProductScreen = ({ navigation }: any) => {
   const { user, updateUser } = useAuth();
 
+  // Fallback cities list
+  const CITY_FALLBACK = [
+    'Adana','Adıyaman','Afyonkarahisar','Ağrı','Aksaray','Amasya','Ankara','Antalya','Ardahan','Artvin','Aydın','Balıkesir','Bartın','Batman','Bayburt','Bilecik','Bingöl','Bitlis','Bolu','Burdur','Bursa','Çanakkale','Çankırı','Çorum','Denizli','Diyarbakır','Düzce','Edirne','Elazığ','Erzincan','Erzurum','Eskişehir','Gaziantep','Giresun','Gümüşhane','Hakkari','Hatay','Iğdır','Isparta','İstanbul','İzmir','Kahramanmaraş','Karabük','Karaman','Kars','Kastamonu','Kayseri','Kırıkkale','Kırklareli','Kırşehir','Kilis','Kocaeli','Konya','Kütahya','Malatya','Manisa','Mardin','Mersin','Muğla','Muş','Nevşehir','Niğde','Ordu','Osmaniye','Rize','Sakarya','Samsun','Siirt','Sinop','Sivas','Şanlıurfa','Şırnak','Tekirdağ','Tokat','Trabzon','Tunceli','Uşak','Van','Yalova','Yozgat','Zonguldak'
+  ];
+
   // Step management
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 6;
@@ -210,8 +215,14 @@ const AddProductScreen = ({ navigation }: any) => {
   const [loadingDistricts, setLoadingDistricts] = useState(false);
   const [citySearchText, setCitySearchText] = useState('');
   const [districtSearchText, setDistrictSearchText] = useState('');
+  const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
 
-  // Load cities on mount
+  // Load cities on mount (separate from user initialization)
+  useEffect(() => {
+    loadCities();
+  }, []);
+
+  // Initialize user and role on mount
   useEffect(() => {
     const initializeScreen = async () => {
       try {
@@ -240,11 +251,11 @@ const AddProductScreen = ({ navigation }: any) => {
           }
         }
         
-        // Load cities
-        await loadCities();
         console.log('✅ AddProductScreen initialized successfully');
       } catch (error) {
         console.error('❌ AddProductScreen initialization error:', error);
+        console.error('❌ Error details:', error instanceof Error ? error.message : 'Unknown error');
+        console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack');
         // Don't crash - just log the error
       }
     };
@@ -311,30 +322,70 @@ const AddProductScreen = ({ navigation }: any) => {
   };
 
   const loadCities = async () => {
-    setLoadingCities(true);
     try {
-      const response = await locationsAPI.getCities();
-      setCities(response.cities || []);
+      setLoadingCities(true);
+      console.log('📡 Loading cities from:', `${ENV.API_BASE_URL}/locations/cities`);
+      
+      const response = await fetch(`${ENV.API_BASE_URL}/locations/cities`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Cities data received, count:', Array.isArray(data) ? data.length : 0);
+      
+      // Normalize possible shapes
+      const arr = Array.isArray(data) ? data : (data?.cities || []);
+      const normalized = arr.map((c: any) => ({
+        _id: c._id || c.id || c.code || c.name,
+        name: c.name || String(c),
+        code: c.code,
+      }));
+      
+      if (normalized.length === 0) {
+        console.warn('⚠️ No cities from API, using fallback');
+        setCities(CITY_FALLBACK.map((n, i) => ({ _id: String(i), name: n })));
+      } else {
+        setCities(normalized);
+      }
     } catch (error) {
-      console.error('Error loading cities:', error);
-      setCities([]); // Hata durumunda boş array
-      Alert.alert('Hata', 'İller yüklenirken hata oluştu');
+      console.error('❌ Error loading cities:', error);
+      // Fall back to static list to keep UI usable
+      setCities(CITY_FALLBACK.map((n, i) => ({ _id: String(i), name: n })));
     } finally {
       setLoadingCities(false);
     }
   };
 
-  const loadDistricts = async (city: any) => {
-    setLoadingDistricts(true);
-    setDistricts([]); // Reset districts
+  const loadDistricts = async (cityName?: string, cityId?: string) => {
     try {
-      const cityId = city._id || city;
-      const response = await locationsAPI.getDistricts(cityId);
-      setDistricts(response.districts || []);
+      setLoadingDistricts(true);
+      setDistricts([]);
+      
+      let response: Response | null = null;
+      if (cityId) {
+        console.log('🏙️ Loading districts by city ID:', cityId);
+        response = await fetch(`${ENV.API_BASE_URL}/locations/cities/${cityId}/districts`);
+      } else if (cityName) {
+        console.log('🏙️ Loading districts by city name:', cityName);
+        response = await fetch(`${ENV.API_BASE_URL}/locations/districts?city=${encodeURIComponent(cityName)}`);
+      }
+      
+      if (!response) {
+        throw new Error('City info missing');
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const arr = Array.isArray(data) ? data : (data?.districts || []);
+      setDistricts(arr || []);
+      console.log('✅ Districts loaded:', arr.length);
     } catch (error) {
-      console.error('Error loading districts:', error);
-      setDistricts([]); // Hata durumunda boş array
-      Alert.alert('Hata', 'İlçeler yüklenirken bir hata oluştu');
+      console.error('❌ Error loading districts:', error);
+      setDistricts([]);
     } finally {
       setLoadingDistricts(false);
     }
@@ -343,8 +394,17 @@ const AddProductScreen = ({ navigation }: any) => {
   const handleCitySelect = (city: any) => {
     const cityName = city.name || city;
     setFormData({ ...formData, city: cityName, district: '' });
-    loadDistricts(city); // Pass the full city object with _id
+    setSelectedCityId(city._id || city.id || null);
+    setDistricts([]);
     setShowCityModal(false);
+    setCitySearchText('');
+    
+    // Load districts for selected city
+    if (city._id || city.id) {
+      loadDistricts(undefined, city._id || city.id);
+    } else if (cityName) {
+      loadDistricts(cityName);
+    }
   };
 
   const handleDistrictSelect = (district: any) => {
@@ -898,7 +958,10 @@ const AddProductScreen = ({ navigation }: any) => {
         <Text style={styles.inputLabel}>Şehir *</Text>
         <TouchableOpacity
           style={styles.selectButton}
-          onPress={() => setShowCityModal(true)}
+          onPress={() => {
+            console.log('🏙️ Şehir Seç butonuna basıldı, mevcut cities:', cities.length);
+            setShowCityModal(true);
+          }}
         >
           <Text style={styles.selectButtonText}>
             {formData.city || 'Şehir Seçin'}
@@ -1481,7 +1544,11 @@ const AddProductScreen = ({ navigation }: any) => {
       </Modal>
 
       {/* City Modal */}
-      <Modal visible={showCityModal} animationType="slide" transparent>
+      <Modal 
+        visible={showCityModal} 
+        animationType="slide" 
+        transparent
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
@@ -1510,6 +1577,15 @@ const AddProductScreen = ({ navigation }: any) => {
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#2ECC71" />
                 <Text style={styles.loadingText}>İller yükleniyor...</Text>
+              </View>
+            ) : filteredCities.length === 0 ? (
+              <View style={styles.loadingContainer}>
+                <Text style={styles.loadingText}>
+                  {citySearchText ? 'Şehir bulunamadı' : 'Henüz şehir yüklenmedi'}
+                </Text>
+                <Text style={styles.infoText}>
+                  Toplam şehir: {cities.length}
+                </Text>
               </View>
             ) : (
               <FlatList

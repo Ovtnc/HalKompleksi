@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StatusBar, LogBox, Alert } from 'react-native';
+import { StatusBar, LogBox, Alert, Linking } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
@@ -41,12 +41,51 @@ console.error = (...args) => {
   // Log to crash reporting service (Sentry, Firebase, etc.)
 };
 
+// Deep linking configuration
+const linking = {
+  prefixes: ['halkompleksi://', 'https://halkompleksi.com'],
+  config: {
+    screens: {
+      MainTabs: {
+        screens: {
+          Home: 'home',
+          Products: 'products',
+          Profile: 'profile',
+        },
+      },
+      ProductDetail: 'product/:productId',
+      Login: 'login',
+      Register: 'register',
+    },
+  },
+};
+
 export default function App() {
   useEffect(() => {
     // Set global error handler
     if (ErrorUtils) {
       ErrorUtils.setGlobalHandler(globalErrorHandler);
     }
+
+    // Handle deep links
+    const handleDeepLink = (event: { url: string }) => {
+      console.log('🔗 Deep link received:', event.url);
+      // Deep link handling is automatic with NavigationContainer linking config
+    };
+
+    // Listen for deep links
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+
+    // Check if app was opened with a deep link
+    Linking.getInitialURL().then(url => {
+      if (url) {
+        console.log('🔗 App opened with URL:', url);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   return (
@@ -54,7 +93,7 @@ export default function App() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <AuthProvider>
-            <NavigationContainer>
+            <NavigationContainer linking={linking}>
               <AppNavigator />
             </NavigationContainer>
             <StatusBar barStyle="light-content" />

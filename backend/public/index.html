@@ -917,6 +917,30 @@
             }, 16);
         };
 
+        // Track if stats animation has started
+        let statsAnimated = false;
+
+        // Start stats animation
+        function startStatsAnimation() {
+            if (statsAnimated) return;
+            statsAnimated = true;
+            
+            const userEl = document.getElementById('stat-users');
+            const productEl = document.getElementById('stat-products');
+            const cityEl = document.getElementById('stat-cities');
+            const categoryEl = document.getElementById('stat-categories');
+            
+            const userCount = parseInt(userEl.getAttribute('data-count')) || 1000;
+            const productCount = parseInt(productEl.getAttribute('data-count')) || 500;
+            const cityCount = parseInt(cityEl.getAttribute('data-count')) || 81;
+            const categoryCount = parseInt(categoryEl.getAttribute('data-count')) || 10;
+            
+            setTimeout(() => animateCounter(userEl, userCount), 100);
+            setTimeout(() => animateCounter(productEl, productCount), 200);
+            setTimeout(() => animateCounter(cityEl, cityCount), 300);
+            setTimeout(() => animateCounter(categoryEl, categoryCount), 400);
+        }
+
         // Load real stats from API
         async function loadStats() {
             try {
@@ -932,34 +956,34 @@
                 
                 // Update data-count attributes with real values
                 document.getElementById('stat-users').setAttribute('data-count', stats.users || 1000);
-                document.getElementById('stat-products').setAttribute('data-count', stats.products || 50);
+                document.getElementById('stat-products').setAttribute('data-count', stats.products || 500);
                 document.getElementById('stat-cities').setAttribute('data-count', stats.cities || 81);
                 document.getElementById('stat-categories').setAttribute('data-count', stats.categories || 10);
                 
             } catch (error) {
                 console.error('❌ Error loading stats:', error);
-                // Fallback değerler zaten HTML'de var, hiçbir şey yapmaya gerek yok
             }
         }
 
-        // Load stats on page load
-        loadStats();
+        // Load stats when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                loadStats();
+                // Observer will trigger animation when stats section is visible
+            });
+        } else {
+            loadStats();
+        }
 
-        // Stats counter animation
+        // Stats counter animation - trigger on scroll into view
         const statsObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    const counters = entry.target.querySelectorAll('[data-count]');
-                    counters.forEach((counter, index) => {
-                        const target = parseInt(counter.getAttribute('data-count'));
-                        setTimeout(() => {
-                            animateCounter(counter, target);
-                        }, index * 100);
-                    });
+                    startStatsAnimation();
                     statsObserver.unobserve(entry.target);
                 }
             });
-        }, { threshold: 0.5 });
+        }, { threshold: 0.3 });
 
         const statsSection = document.querySelector('.stats');
         if (statsSection) {

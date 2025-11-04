@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const mongoose = require('mongoose');
 const errorHandler = require('./middleware/errorHandler');
 require('dotenv').config();
 
@@ -179,11 +180,12 @@ app.get('/api/health', (req, res) => {
 // Public stats endpoint for landing page
 app.get('/api/stats', async (req, res) => {
   try {
-    const Product = require('./models/Product');
-    const User = require('./models/User');
-    const Location = require('./models/Location');
-    
     console.log('📊 Stats API called');
+    
+    // Model'leri güvenli şekilde al (zaten yüklendiyse kullan)
+    const Product = mongoose.models.Product || require('./models/Product');
+    const User = mongoose.models.User || require('./models/User');
+    const Location = mongoose.models.Location || require('./models/Location');
     
     // Admin dashboard ile aynı sorguları kullan
     const [totalUsers, totalProducts, totalCities] = await Promise.all([

@@ -175,17 +175,9 @@ app.get('/api/stats', async (req, res) => {
     // Get real counts from database
     const [totalUsers, totalProducts, totalCities] = await Promise.all([
       User.countDocuments({ isActive: true }),
-      Product.countDocuments({ isApproved: true }),
+      Product.countDocuments({ isApproved: true, isAvailable: true }),
       Location.countDocuments({ isActive: true })
     ]);
-    
-    // Calculate today's products (günlük ilanlar)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayProducts = await Product.countDocuments({
-      isApproved: true,
-      createdAt: { $gte: today }
-    });
     
     // Get unique categories count
     const categories = await Product.distinct('category', { isApproved: true });
@@ -193,7 +185,7 @@ app.get('/api/stats', async (req, res) => {
     
     res.json({
       users: totalUsers || 1000,
-      products: todayProducts || 50,
+      products: totalProducts || 500,  // Toplam aktif ilanlar
       cities: totalCities || 81,
       categories: categoryCount || 10
     });

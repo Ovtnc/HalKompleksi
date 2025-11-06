@@ -102,9 +102,11 @@ router.post('/register', [
     }),
   body('password').isLength({ min: 6 }).withMessage('Şifre en az 6 karakter olmalıdır'),
   body('phone')
+    .optional({ nullable: true, checkFalsy: true })
     .trim()
     .custom((value) => {
-      if (!validateTurkishPhone(value)) {
+      // Phone is optional, only validate if provided
+      if (value && !validateTurkishPhone(value)) {
         throw new Error('Lütfen geçerli bir Türkiye telefon numarası girin. Format: 05XX XXX XX XX veya +90 5XX XXX XX XX');
       }
       return true;

@@ -316,12 +316,27 @@ router.post('/switch-role', [
 });
 
 // @route   DELETE /api/users/account
-// @desc    Delete user account
+// @desc    Delete user account permanently (Apple App Store requirement)
 // @access  Private
 router.delete('/account', auth, async (req, res) => {
   try {
-    await User.findByIdAndUpdate(req.user._id, { isActive: false });
-    res.json({ message: 'Account deactivated successfully' });
+    const userId = req.user._id;
+    
+    // Get all models
+    const Product = require('../models/Product');
+    const Order = require('../models/Order');
+    
+    // Delete user's products
+    await Product.deleteMany({ seller: userId });
+    
+    // Delete user's orders (both as buyer and seller)
+    await Order.deleteMany({ $or: [{ buyer: userId }, { seller: userId }] });
+    
+    // Delete user account permanently
+    await User.findByIdAndDelete(userId);
+    
+    console.log(`✅ User account deleted: ${userId}`);
+    res.json({ message: 'Account deleted successfully' });
   } catch (error) {
     console.error('Delete account error:', error);
     res.status(500).json({ message: 'Sunucu hatası' });

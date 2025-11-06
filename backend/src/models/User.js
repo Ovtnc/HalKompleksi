@@ -21,10 +21,12 @@ const userSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    required: [true, 'Telefon numarası gereklidir'],
+    required: false, // Apple App Store requirement: Phone is optional
     // +90 ile başlayan veya 0 ile başlayan 11 haneli numara
     validate: {
       validator: function(v) {
+        // Phone is optional, only validate if provided
+        if (!v || v === '' || v === '0') return true;
         // +905XXXXXXXXX veya 05XXXXXXXXX formatı
         return /^\+?905[0-9]{9}$/.test(v) || /^05[0-9]{9}$/.test(v);
       },

@@ -78,8 +78,9 @@ const NewAuthScreen = () => {
   const handleRegister = async () => {
     const { name, email, phone, password, confirmPassword } = registerData;
 
-    if (!name || !email || !phone || !password || !confirmPassword) {
-      Alert.alert('Hata', 'Lütfen tüm alanları doldurun');
+    // Apple App Store Requirement: Phone number is optional, not required
+    if (!name || !email || !password || !confirmPassword) {
+      Alert.alert('Hata', 'Lütfen zorunlu alanları doldurun');
       return;
     }
 
@@ -98,8 +99,9 @@ const NewAuthScreen = () => {
       return;
     }
 
-    if (phone.length < 10) {
-      Alert.alert('Hata', 'Geçerli bir telefon numarası girin');
+    // Validate phone only if provided (optional field)
+    if (phone && phone.length < 10) {
+      Alert.alert('Hata', 'Geçerli bir telefon numarası girin (en az 10 haneli)');
       return;
     }
 
@@ -260,7 +262,7 @@ const NewAuthScreen = () => {
                   <Ionicons name="call-outline" size={20} color="#666" style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
-                    placeholder="05XX XXX XX XX"
+                    placeholder="Telefon Numarası (Opsiyonel)"
                     placeholderTextColor="#999"
                     value={registerData.phone}
                     onChangeText={(text) => {
@@ -281,7 +283,7 @@ const NewAuthScreen = () => {
                   />
                 </View>
                 <Text style={styles.helperText}>
-                  Örnek: 05551234567 (0 ile başlayarak 11 haneli yazın)
+                  Opsiyonel. +905551234567
                 </Text>
               </View>
 

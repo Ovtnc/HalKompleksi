@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, StatusBar, Text, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
+import { useDeepLink } from '../contexts/DeepLinkContext';
 
 // Import screens
 import NewAuthScreen from '../screens/auth/NewAuthScreen';
@@ -48,6 +49,7 @@ const log = {
 // Custom Tab Menu - Modern Design
 const CustomTabMenu = () => {
   const { user } = useAuth();
+  const { pendingNavigation, clearPendingNavigation } = useDeepLink();
   const [activeTab, setActiveTab] = useState('Anasayfa');
   const [currentScreen, setCurrentScreen] = useState('Home');
   const [navigationParams, setNavigationParams] = useState<any>(null);
@@ -57,6 +59,17 @@ const CustomTabMenu = () => {
   const userRole = user?.activeRole || user?.userType;
   const isSeller = userRole === 'seller';
   const isAdmin = userRole === 'admin';
+  const isGuest = !user; // Guest mode: user not logged in
+  
+  // Handle deep link navigation
+  useEffect(() => {
+    if (pendingNavigation) {
+      console.log('🔗 Handling pending navigation:', pendingNavigation);
+      setCurrentScreen(pendingNavigation.screen);
+      setNavigationParams(pendingNavigation.params);
+      clearPendingNavigation();
+    }
+  }, [pendingNavigation, clearPendingNavigation]);
   
   // Force refresh when user changes (only when role actually changes)
   useEffect(() => {
@@ -332,6 +345,15 @@ const CustomTabMenu = () => {
       return <MarketShareScreen navigation={adminNavigation} />;
     }
 
+    // Guest Mode: Show login screen for account-based features
+    if (isGuest && (currentScreen === 'Profile' || currentScreen === 'Favorites' || 
+        currentScreen === 'MyProducts' || currentScreen === 'SellerDashboard' ||
+        currentScreen === 'AddProduct' || currentScreen === 'EditProduct' ||
+        currentScreen === 'PersonalInfo' || currentScreen === 'Notifications' ||
+        currentScreen === 'ProductRequest')) {
+      return <NewAuthScreen />;
+    }
+
     // Handle tab navigation
     switch (activeTab) {
       case 'Anasayfa':
@@ -351,13 +373,24 @@ const CustomTabMenu = () => {
         }
         return <MarketReportsScreen navigation={navigation} />;
       case 'Favoriler':
+        // Guest users: show login screen
+        if (isGuest) {
+          return <NewAuthScreen />;
+        }
         return <FavoritesScreen navigation={navigation} />;
       case 'Ürünlerim':
         return <MyProductsScreen navigation={navigation} />;
       case 'Bildirimler':
         return <ProfileScreen navigation={navigation} />;
       case 'Profil':
+        // Guest users: show login screen
+        if (isGuest) {
+          return <NewAuthScreen />;
+        }
         return <ProfileScreen navigation={navigation} />;
+      case 'Giriş':
+        // Show login screen for guests
+        return <NewAuthScreen />;
       default:
         return <HomeScreen navigation={navigation} />;
     }
@@ -422,7 +455,11 @@ const CustomTabMenu = () => {
             {!isSeller && renderTabButton('Piyasa', 'bar-chart-outline', 'Piyasa')}
             {!isSeller && renderTabButton('Favoriler', 'heart-outline', 'Favoriler')}
             {isSeller && renderTabButton('Ürünlerim', 'cube-outline', 'Ürünlerim')}
-            {renderTabButton('Profil', 'person-outline', 'Profil')}
+            {/* Guest mode: show "Giriş" instead of "Profil" */}
+            {isGuest ? 
+              renderTabButton('Giriş', 'log-in-outline', 'Giriş') :
+              renderTabButton('Profil', 'person-outline', 'Profil')
+            }
           </View>
         </View>
       )}
@@ -442,10 +479,8 @@ const AppNavigator = () => {
     );
   }
 
-  if (!user) {
-    return <NewAuthScreen />;
-  }
-
+  // Apple App Store Requirement: Allow browsing without registration
+  // Users can browse products without login, but need to register for account-based features
   return <CustomTabMenu />;
 };
 

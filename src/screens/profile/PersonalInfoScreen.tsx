@@ -25,10 +25,11 @@ interface PersonalInfoScreenProps {
 }
 
 const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({ navigation }) => {
-  const { user, updateUser, sessionExpired, clearSessionExpired, validateToken, setSessionExpired, refreshToken, clearToken } = useAuth();
+  const { user, updateUser, sessionExpired, clearSessionExpired, validateToken, setSessionExpired, refreshToken, clearToken, logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -294,6 +295,91 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({ navigation }) =
     }
   };
 
+  // Apple App Store Requirement: Account deletion feature
+  const handleDeleteAccount = async () => {
+    
+    Alert.alert(
+      'Hesabı Sil',
+      'Hesabınızı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve tüm verileriniz kalıcı olarak silinecektir.',
+      [
+        {
+          text: 'İptal',
+          style: 'cancel',
+        },
+        {
+          text: 'Sil',
+          style: 'destructive',
+          onPress: async () => {
+            
+            // Second confirmation
+            Alert.alert(
+              'Son Onay',
+              'Bu işlem geri alınamaz. Devam etmek istediğinizden emin misiniz?',
+              [
+                {
+                  text: 'İptal',
+                  style: 'cancel',
+                },
+                {
+                  text: 'Evet, Sil',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      setDeleting(true);
+                      
+                      // Get token from AsyncStorage (where it's actually stored)
+                      const token = await AsyncStorage.getItem('authToken');
+
+                      if (!token) {
+                        Alert.alert('Hata', 'Oturum bilgisi bulunamadı. Lütfen tekrar giriş yapın.');
+                        setDeleting(false);
+                        return;
+                      }
+
+                      // Delete account via API
+                      const response = await fetch(`${ENV.API_BASE_URL}/users/account`, {
+                        method: 'DELETE',
+                        headers: {
+                          'Authorization': `Bearer ${token}`,
+                          'Content-Type': 'application/json',
+                        },
+                      });
+
+                      const data = await response.json();
+
+                      if (response.ok) {
+                        // Clear all local data from AsyncStorage
+                        await AsyncStorage.removeItem('authToken');
+                        await AsyncStorage.removeItem('userData');
+                        
+                        // Logout user
+                        await logout();
+                        
+                        Alert.alert(
+                          'Hesap Silindi',
+                          'Hesabınız başarıyla silindi. Hal Kompleksi\'ni kullandığınız için teşekkür ederiz.',
+                          [{ text: 'Tamam' }]
+                        );
+                      } else {
+                        console.error('❌ Server error:', data.message);
+                        Alert.alert('Hata', data.message || 'Hesap silinirken bir hata oluştu');
+                      }
+                    } catch (error: any) {
+                      console.error('Delete account error:', error);
+                      Alert.alert('Hata', 'Hesap silinirken bir hata oluştu. Lütfen tekrar deneyin.');
+                    } finally {
+                      setDeleting(false);
+                    }
+                  },
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#27AE60" />
@@ -454,6 +540,29 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({ navigation }) =
             </TouchableOpacity>
           </View>
         )}
+
+        {/* Danger Zone - Account Deletion */}
+        <View style={styles.dangerZone}>
+          <Text style={styles.dangerZoneTitle}>⚠️ Tehlikeli Alan</Text>
+          <Text style={styles.dangerZoneDescription}>
+            Hesabınızı silmek istiyorsanız, aşağıdaki butona tıklayın. Bu işlem geri alınamaz.
+          </Text>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={handleDeleteAccount}
+            disabled={deleting || isEditing}
+            activeOpacity={0.7}
+          >
+            {deleting ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <>
+                <Ionicons name="trash-outline" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+                <Text style={styles.deleteButtonText}>Hesabı Kalıcı Olarak Sil</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
@@ -599,6 +708,41 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   saveButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  dangerZone: {
+    backgroundColor: '#FFF5F5',
+    borderRadius: 12,
+    padding: 20,
+    marginHorizontal: 20,
+    marginBottom: 30,
+    borderWidth: 1,
+    borderColor: '#FED7D7',
+  },
+  dangerZoneTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#C53030',
+    marginBottom: 8,
+  },
+  dangerZoneDescription: {
+    fontSize: 14,
+    color: '#742A2A',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  deleteButton: {
+    backgroundColor: '#E53E3E',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',

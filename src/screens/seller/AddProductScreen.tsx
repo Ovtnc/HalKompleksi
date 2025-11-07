@@ -314,7 +314,14 @@ const AddProductScreen = ({ navigation }: any) => {
     setLoadingCities(true);
     try {
       const response = await locationsAPI.getCities();
-      setCities(response.cities || []);
+      
+      // Handle different response formats (same fix as ProductsScreen)
+      const citiesArray = Array.isArray(response) 
+        ? response  // Direct array from backend
+        : (response?.cities || []);  // Wrapped in cities property
+      
+      console.log('🏙️ AddProduct: Cities loaded:', citiesArray.length);
+      setCities(citiesArray);
     } catch (error) {
       console.error('Error loading cities:', error);
       setCities([]); // Hata durumunda boş array

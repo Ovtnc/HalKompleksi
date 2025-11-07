@@ -86,14 +86,30 @@ const ProductsScreen = ({ navigation, route }: ProductsScreenProps) => {
 
   const loadInitialData = async () => {
     try {
+      console.log('🔄 Loading categories and cities...');
+      
       // Load categories and cities
       const [categoriesResponse, citiesResponse] = await Promise.all([
         categoriesAPI.getCategories(),
         locationsAPI.getCities()
       ]);
       
+      console.log('📦 Categories response:', categoriesResponse);
+      console.log('📦 Cities response:', citiesResponse);
+      console.log('🏙️ Cities type:', Array.isArray(citiesResponse) ? 'Array' : 'Object');
+      
+      // Handle different response formats
+      const citiesArray = Array.isArray(citiesResponse) 
+        ? citiesResponse  // Direct array from backend
+        : (citiesResponse?.cities || []);  // Wrapped in cities property
+      
+      console.log('🏙️ Cities array length:', citiesArray.length);
+      
       setCategories(categoriesResponse.categories || []);
-      setCities(citiesResponse.cities || []);
+      setCities(citiesArray);
+      
+      console.log('✅ Categories loaded:', categoriesResponse.categories?.length || 0);
+      console.log('✅ Cities loaded:', citiesArray.length);
     } catch (error) {
       console.error('Error loading initial data:', error);
     }
@@ -601,8 +617,12 @@ const ProductsScreen = ({ navigation, route }: ProductsScreenProps) => {
     if (!showLocationModal) return null;
 
     const filteredCities = cities.filter(city => 
-      city.name.toLowerCase().includes(locationSearchQuery.toLowerCase())
+      city.name && city.name.toLowerCase().includes(locationSearchQuery.toLowerCase())
     );
+    
+    console.log('🏙️ MODAL OPENED: Total cities in state:', cities.length);
+    console.log('🏙️ MODAL: Filtered cities:', filteredCities.length);
+    console.log('🏙️ MODAL: First 3 cities:', cities.slice(0, 3));
 
     return (
       <View style={styles.locationModal}>
@@ -627,13 +647,41 @@ const ProductsScreen = ({ navigation, route }: ProductsScreenProps) => {
 
           <FlatList
             data={filteredCities}
-            renderItem={({ item }) => (
+              renderItem={({ item }) => (
               <TouchableOpacity
                 style={styles.cityItem}
-                onPress={() => {
+                onPress={async () => {
+                  console.log('📍 City selected:', item.name);
                   setSelectedLocation(item.name);
                   setShowLocationModal(false);
                   setLocationSearchQuery('');
+                  
+                  // Auto-apply filter when city is selected
+                  setLoading(true);
+                  try {
+                    const searchParams: any = {};
+                    if (searchQuery) searchParams.query = searchQuery;
+                    if (selectedCategory) searchParams.category = selectedCategory;
+                    searchParams.location = item.name; // Use newly selected location
+                    if (priceRange.min) searchParams.minPrice = priceRange.min;
+                    if (priceRange.max) searchParams.maxPrice = priceRange.max;
+                    searchParams.sortBy = sortBy;
+                    searchParams.sortOrder = sortOrder;
+                    if (showOnlyAvailable) searchParams.stockAvailable = true;
+                    if (showOnlyOrganic) searchParams.organic = true;
+
+                    const response = await productsAPI.getProducts(searchParams);
+                    if (Array.isArray(response)) {
+                      setProducts(response);
+                    } else if (response?.products) {
+                      setProducts(response.products);
+                    }
+                    console.log('✅ Products filtered by city:', item.name);
+                  } catch (error) {
+                    console.error('Error applying city filter:', error);
+                  } finally {
+                    setLoading(false);
+                  }
                 }}
               >
                 <Text style={styles.cityName}>{item.name}</Text>

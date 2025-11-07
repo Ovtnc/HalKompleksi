@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -47,7 +47,7 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
     ]);
   };
 
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     try {
       setProductsLoading(true);
       console.log('🔄 Loading products from backend...');
@@ -74,7 +74,7 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
     } finally {
       setProductsLoading(false);
     }
-  };
+  }, []); // Empty deps - function never changes
 
   // Initialize auto-refresh now that loadProducts is defined
   useProductRefresh(loadProducts);

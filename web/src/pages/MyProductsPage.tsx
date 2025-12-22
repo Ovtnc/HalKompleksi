@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { productsAPI } from '../services/api';
 import { Product } from '../types';
+import { getPrimaryImage } from '../utils/imageUtils';
 import {
   IoArrowBack,
   IoAddCircleOutline,
@@ -151,9 +152,7 @@ const MyProductsPage = () => {
   };
 
   const primaryImage = (product: Product) => {
-    if (!product.images || product.images.length === 0) return undefined;
-    const firstImage = product.images[0];
-    return typeof firstImage === 'string' ? firstImage : (firstImage as any)?.url;
+    return getPrimaryImage(product.images);
   };
 
   const favoritesCount = (product: Product) => {

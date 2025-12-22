@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { productsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Product } from '../types';
+import { normalizeImageUrl } from '../utils/imageUtils';
 import { 
   IoHeartOutline, 
   IoHeart, 
@@ -216,7 +217,8 @@ const ProductDetailPage = () => {
 
   const images = product.images || [];
   const currentImage = images[currentImageIndex] || images[0];
-  const imageUrl = typeof currentImage === 'string' ? currentImage : (currentImage as any)?.url;
+  const rawImageUrl = typeof currentImage === 'string' ? currentImage : (currentImage as any)?.url;
+  const imageUrl = normalizeImageUrl(rawImageUrl);
   
   const category = (product as any).category || '';
   const categoryData = (product as any).categoryData || {};
@@ -298,7 +300,8 @@ const ProductDetailPage = () => {
             {images.length > 1 && (
               <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                 {images.map((img, index) => {
-                  const imgUrl = typeof img === 'string' ? img : (img as any)?.url;
+                  const rawImgUrl = typeof img === 'string' ? img : (img as any)?.url;
+                  const imgUrl = normalizeImageUrl(rawImgUrl);
                   return (
                     <button
                       key={index}
@@ -312,11 +315,17 @@ const ProductDetailPage = () => {
                           : 'border-gray-200 hover:border-primary/50 hover:scale-105'
                       }`}
                     >
-                      <img
-                        src={imgUrl}
-                        alt={`${product.title} ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
+                      {imgUrl ? (
+                        <img
+                          src={imgUrl}
+                          alt={`${product.title} ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-100 text-2xl">
+                          📦
+                        </div>
+                      )}
                     </button>
                   );
                 })}

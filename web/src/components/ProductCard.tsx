@@ -1,4 +1,5 @@
 import { Product } from '../types';
+import { getPrimaryImage } from '../utils/imageUtils';
 
 interface ProductCardProps {
   product: Product;
@@ -6,9 +7,7 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, onClick }: ProductCardProps) => {
-  const primaryImage = product.images?.[0] 
-    ? (typeof product.images[0] === 'string' ? product.images[0] : (product.images[0] as any).url)
-    : undefined;
+  const primaryImage = getPrimaryImage(product.images);
 
   const price = product.price || 0;
   const views = product.views || 0;

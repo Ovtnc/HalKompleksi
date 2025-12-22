@@ -146,7 +146,6 @@ const AddProductPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [categoriesList, setCategoriesList] = useState<Category[]>([]);
   const [cities, setCities] = useState<any[]>([]);
   const [districts, setDistricts] = useState<any[]>([]);
   
@@ -175,10 +174,7 @@ const AddProductPage = () => {
 
   const loadCategories = async () => {
     try {
-      const response = await categoriesAPI.getCategories();
-      if (response.categories) {
-        setCategoriesList(response.categories);
-      }
+      await categoriesAPI.getCategories();
     } catch (error) {
       console.error('Error loading categories:', error);
     }

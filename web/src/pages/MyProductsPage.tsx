@@ -20,7 +20,6 @@ const MyProductsPage = () => {
   const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [productCount, setProductCount] = useState({
     total: 0,
     active: 0,
@@ -65,7 +64,6 @@ const MyProductsPage = () => {
       setProducts([]);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, [navigate]);
 
@@ -77,10 +75,6 @@ const MyProductsPage = () => {
     loadMyProducts();
   }, [user, loadMyProducts, navigate]);
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    loadMyProducts();
-  };
 
   const handleDeleteProduct = (product: Product) => {
     if (!window.confirm(`${product.title} ürününü silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {

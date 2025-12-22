@@ -148,7 +148,6 @@ const EditProductPage = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [categoriesList, setCategoriesList] = useState<Category[]>([]);
   const [cities, setCities] = useState<any[]>([]);
   const [districts, setDistricts] = useState<any[]>([]);
   
@@ -274,7 +273,7 @@ const EditProductPage = () => {
     try {
       const response = await categoriesAPI.getCategories();
       if (response.categories) {
-        setCategoriesList(response.categories);
+        // Categories loaded
       }
     } catch (error) {
       console.error('Error loading categories:', error);

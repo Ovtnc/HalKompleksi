@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Önce localStorage'dan kontrol et (rememberMe true ise)
       let token = localStorage.getItem('authToken');
       let userData = localStorage.getItem('userData');
-      const rememberMe = localStorage.getItem('rememberMe') === 'true';
+      let rememberMe = localStorage.getItem('rememberMe') === 'true';
       
       // Eğer localStorage'da yoksa sessionStorage'dan kontrol et
       if (!token || !userData) {

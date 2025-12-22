@@ -5,20 +5,28 @@ import { ENV } from '../config/env';
  * Handles relative paths, absolute paths, and full URLs
  */
 export const normalizeImageUrl = (url: string | undefined | null): string | undefined => {
-  if (!url) return undefined;
+  if (!url) {
+    console.warn('⚠️ normalizeImageUrl: Empty URL provided');
+    return undefined;
+  }
   
   // If already a full URL, return as is
   if (url.startsWith('http://') || url.startsWith('https://')) {
+    console.log('✅ normalizeImageUrl: Full URL detected:', url);
     return url;
   }
   
   // If starts with /, prepend base URL
   if (url.startsWith('/')) {
-    return `${ENV.WEB_BASE_URL}${url}`;
+    const normalized = `${ENV.WEB_BASE_URL}${url}`;
+    console.log('✅ normalizeImageUrl: Absolute path normalized:', url, '→', normalized);
+    return normalized;
   }
   
   // Otherwise, assume it's relative to uploads
-  return `${ENV.WEB_BASE_URL}/uploads/${url}`;
+  const normalized = `${ENV.WEB_BASE_URL}/uploads/${url}`;
+  console.log('✅ normalizeImageUrl: Relative path normalized:', url, '→', normalized);
+  return normalized;
 };
 
 /**

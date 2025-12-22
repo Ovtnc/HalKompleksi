@@ -8,6 +8,13 @@ interface ProductCardProps {
 
 const ProductCard = ({ product, onClick }: ProductCardProps) => {
   const primaryImage = getPrimaryImage(product.images);
+  
+  // Debug: Log image data
+  if (product.images && product.images.length > 0) {
+    console.log('🖼️ ProductCard - Product:', product.title);
+    console.log('🖼️ ProductCard - Raw images:', product.images);
+    console.log('🖼️ ProductCard - Primary image URL:', primaryImage);
+  }
 
   const price = product.price || 0;
   const views = product.views || 0;

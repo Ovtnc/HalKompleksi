@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { productsAPI, categoriesAPI, locationsAPI, uploadAPI } from '../services/api';
-import { Category } from '../types';
 import {
   IoArrowBack,
   IoImageOutline,

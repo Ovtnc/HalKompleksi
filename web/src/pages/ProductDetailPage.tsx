@@ -13,8 +13,6 @@ import {
   IoEyeOutline,
   IoCheckmarkCircle,
   IoCloseCircle,
-  IoTimeOutline,
-  IoCalendarOutline
 } from 'react-icons/io5';
 
 // Kategori-spesifik alanlar tanımları

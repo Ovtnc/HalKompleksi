@@ -21,6 +21,7 @@ export interface Product {
     address?: string;
   } | string;
   isAvailable: boolean;
+  isFeatured?: boolean;
   stock?: number;
   unit?: string;
   views?: number;

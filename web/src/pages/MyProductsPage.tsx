@@ -12,8 +12,6 @@ import {
   IoPlayOutline,
   IoEyeOutline,
   IoHeartOutline,
-  IoCheckmarkCircleOutline,
-  IoTimeOutline,
   IoCubeOutline
 } from 'react-icons/io5';
 

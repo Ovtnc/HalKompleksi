@@ -10,7 +10,6 @@ import {
   IoHeartOutline,
   IoLocationOutline,
   IoPersonOutline,
-  IoPricetagOutline,
   IoRefreshOutline
 } from 'react-icons/io5';
 import ProductCard from '../components/ProductCard';

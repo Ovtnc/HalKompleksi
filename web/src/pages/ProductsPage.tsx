@@ -12,7 +12,7 @@ const ProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
+  const [page] = useState(1);
 
   useEffect(() => {
     loadProducts();

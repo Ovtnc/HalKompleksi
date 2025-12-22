@@ -10,7 +10,6 @@ import {
   IoHeartOutline,
   IoAddCircleOutline,
   IoArrowBack,
-  IoStatsChartOutline,
   IoCheckmarkCircleOutline,
   IoTimeOutline
 } from 'react-icons/io5';

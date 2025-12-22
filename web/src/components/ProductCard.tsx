@@ -10,7 +10,6 @@ const ProductCard = ({ product, onClick }: ProductCardProps) => {
     ? (typeof product.images[0] === 'string' ? product.images[0] : (product.images[0] as any).url)
     : undefined;
 
-  const productId = product._id || product.id;
   const price = product.price || 0;
   const views = product.views || 0;
   const favorites = Array.isArray((product as any).favorites) 

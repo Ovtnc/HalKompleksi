@@ -15,7 +15,7 @@ const getAuthHeaders = (token?: string): HeadersInit => {
 };
 
 // Enhanced error handling
-const handleApiError = async (response: Response, context: string) => {
+const handleApiError = async (response: Response, _context?: string) => {
   let errorMessage = 'Bir hata oluştu';
   
   try {

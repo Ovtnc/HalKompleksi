@@ -10,12 +10,11 @@ import {
   IoBagOutline,
   IoShieldCheckmarkOutline,
   IoChevronForwardOutline,
-  IoStatsChartOutline
 } from 'react-icons/io5';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const { user, logout, updateUser, switchRole } = useAuth();
+  const { user, logout, switchRole } = useAuth();
 
   const handleLogout = async () => {
     if (window.confirm('Hesabınızdan çıkış yapmak istediğinizden emin misiniz?')) {

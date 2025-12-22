@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { productsAPI, categoriesAPI, locationsAPI, uploadAPI } from '../services/api';
-import { Category, Product } from '../types';
+import { Category } from '../types';
 import {
   IoArrowBack,
   IoImageOutline,
@@ -365,7 +365,7 @@ const EditProductPage = () => {
       }
 
       // Upload images one by one
-      const uploadedImages = [];
+      const uploadedImages: Array<{ url: string; isPrimary: boolean }> = [];
       for (const file of imageFiles) {
         try {
           console.log('📤 Uploading image:', file.name);

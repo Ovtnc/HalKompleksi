@@ -7,8 +7,7 @@ import {
   IoArrowBack,
   IoImageOutline,
   IoCloseOutline,
-  IoCheckmarkCircleOutline,
-  IoCalendarOutline
+  IoCheckmarkCircleOutline
 } from 'react-icons/io5';
 
 // Kategoriler
@@ -277,7 +276,7 @@ const AddProductPage = () => {
       }
 
       // Upload images one by one
-      const uploadedImages = [];
+      const uploadedImages: Array<{ url: string; isPrimary: boolean }> = [];
       for (const file of imageFiles) {
         try {
           console.log('📤 Uploading image:', file.name);

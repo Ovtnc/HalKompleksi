@@ -147,7 +147,7 @@ const MyProductsPage = () => {
   const handleEditProduct = (product: Product) => {
     const productId = product._id || product.id;
     if (productId) {
-      navigate(`/seller/products/edit/${productId}`);
+      navigate(`/app/seller/products/edit/${productId}`);
     }
   };
 
@@ -191,7 +191,7 @@ const MyProductsPage = () => {
               Ürünlerim
             </h1>
             <button
-              onClick={() => navigate('/seller/products/add')}
+              onClick={() => navigate('/app/seller/products/add')}
               className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary-dark transition-colors font-medium"
             >
               <IoAddCircleOutline className="w-5 h-5" />
@@ -229,7 +229,7 @@ const MyProductsPage = () => {
             <h3 className="text-xl font-bold text-gray-900 mb-2">Henüz ürün eklemediniz</h3>
             <p className="text-gray-500 mb-6">İlk ürününüzü ekleyerek satışa başlayın</p>
             <button
-              onClick={() => navigate('/seller/products/add')}
+              onClick={() => navigate('/app/seller/products/add')}
               className="px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary-dark transition-colors font-medium"
             >
               İlk Ürününüzü Ekleyin

@@ -34,7 +34,7 @@ const ProfilePage = () => {
       
       // Navigate based on role
       if (role === 'seller') {
-        navigate('/seller/dashboard');
+        navigate('/app/seller/dashboard');
       } else {
         navigate('/');
       }

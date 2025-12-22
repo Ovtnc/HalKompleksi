@@ -29,17 +29,31 @@ const SellerDashboardPage = () => {
 
   useEffect(() => {
     if (!user) {
-      navigate('/login');
+      navigate('/login', { state: { from: '/app/seller/dashboard' } });
+      return;
+    }
+
+    // Check if user has seller role
+    const hasSellerRole = user.userRoles?.includes('seller') || user.userType === 'seller';
+    
+    if (!hasSellerRole) {
+      console.warn('⚠️ User does not have seller role, redirecting to profile...');
+      navigate('/app/profile', { 
+        state: { 
+          message: 'Satıcı paneline erişmek için önce satıcı rolüne geçmeniz gerekiyor.' 
+        } 
+      });
       return;
     }
 
     // Ensure user is in seller role
-    if (user.activeRole !== 'seller' && user.userRoles?.includes('seller')) {
+    if (user.activeRole !== 'seller' && hasSellerRole) {
+      console.log('🔄 Switching to seller role...');
       updateUser({ activeRole: 'seller' });
     }
 
     loadDashboardData();
-  }, [user]);
+  }, [user, navigate]);
 
   const loadDashboardData = async () => {
     try {
@@ -201,7 +215,7 @@ const SellerDashboardPage = () => {
         {/* Quick Actions */}
         <div className="grid md:grid-cols-2 gap-4 mb-8">
           <button
-            onClick={() => navigate('/seller/products/add')}
+            onClick={() => navigate('/app/seller/products/add')}
             className="bg-gradient-to-r from-primary to-primary-dark text-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center justify-between group"
           >
             <div className="flex items-center gap-4">
@@ -239,7 +253,7 @@ const SellerDashboardPage = () => {
               Son Ürünlerim
             </h2>
             <button
-              onClick={() => navigate('/seller/products')}
+              onClick={() => navigate('/app/seller/products')}
               className="text-primary hover:text-primary-dark font-medium text-sm"
             >
               Tümünü Gör →
@@ -251,7 +265,7 @@ const SellerDashboardPage = () => {
               <IoCubeOutline className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500 mb-4">Henüz ürün eklemediniz</p>
               <button
-                onClick={() => navigate('/seller/products/add')}
+                onClick={() => navigate('/app/seller/products/add')}
                 className="px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary-dark transition-colors font-medium"
               >
                 İlk Ürününüzü Ekleyin

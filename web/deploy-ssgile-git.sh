@@ -133,10 +133,26 @@ echo -e "${GREEN}🔐 Setting permissions...${NC}"
 chown -R www-data:www-data "$DEPLOY_DIR"
 chmod -R 755 "$DEPLOY_DIR"
 
+# Check if SSL certificate exists
+SSL_CERT="/etc/letsencrypt/live/app.ssgile.com/fullchain.pem"
+SSL_KEY="/etc/letsencrypt/live/app.ssgile.com/privkey.pem"
+HAS_SSL=false
+
+if [ -f "$SSL_CERT" ] && [ -f "$SSL_KEY" ]; then
+    HAS_SSL=true
+    echo -e "${GREEN}✅ SSL certificate found${NC}"
+else
+    echo -e "${YELLOW}⚠️  SSL certificate not found. Will create HTTP-only configuration.${NC}"
+    echo -e "${YELLOW}   Run 'sudo certbot --nginx -d app.ssgile.com' after DNS is configured.${NC}"
+fi
+
 # Create nginx configuration if it doesn't exist
 if [ ! -f "/etc/nginx/sites-available/app.ssgile.com" ]; then
     echo -e "${GREEN}⚙️  Creating nginx configuration...${NC}"
-    cat > "/etc/nginx/sites-available/app.ssgile.com" <<EOF
+    
+    if [ "$HAS_SSL" = true ]; then
+        # HTTPS configuration
+        cat > "/etc/nginx/sites-available/app.ssgile.com" <<EOF
 server {
     listen 80;
     listen [::]:80;
@@ -151,9 +167,9 @@ server {
     listen [::]:443 ssl http2;
     server_name app.ssgile.com;
 
-    # SSL Configuration (update with your certificate paths)
-    ssl_certificate /etc/letsencrypt/live/app.ssgile.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/app.ssgile.com/privkey.pem;
+    # SSL Configuration
+    ssl_certificate $SSL_CERT;
+    ssl_certificate_key $SSL_KEY;
     
     # SSL Settings
     ssl_protocols TLSv1.2 TLSv1.3;
@@ -212,8 +228,74 @@ server {
     }
 }
 EOF
+    else
+        # HTTP-only configuration (for initial setup)
+        cat > "/etc/nginx/sites-available/app.ssgile.com" <<EOF
+server {
+    listen 80;
+    listen [::]:80;
+    server_name app.ssgile.com;
+
+    # Root directory
+    root $DEPLOY_DIR;
+    index index.html;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml+rss application/json application/javascript;
+
+    # Cache static assets
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+    }
+
+    # API proxy (if needed)
+    location /api/ {
+        proxy_pass https://halkompleksi.com;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+    }
+
+    # SPA routing - all routes to index.html
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    # Error pages
+    error_page 404 /index.html;
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /usr/share/nginx/html;
+    }
+}
+EOF
+    fi
 else
-    echo -e "${YELLOW}ℹ️  Nginx configuration already exists, skipping...${NC}"
+    echo -e "${YELLOW}ℹ️  Nginx configuration already exists${NC}"
+    
+    # If SSL certificate exists but config doesn't have it, update config
+    if [ "$HAS_SSL" = true ]; then
+        if ! grep -q "ssl_certificate" "/etc/nginx/sites-available/app.ssgile.com"; then
+            echo -e "${YELLOW}⚠️  SSL certificate found but config doesn't use it.${NC}"
+            echo -e "${YELLOW}   Please update nginx config manually or run: sudo certbot --nginx -d app.ssgile.com${NC}"
+        fi
+    fi
 fi
 
 # Enable site

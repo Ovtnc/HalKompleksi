@@ -433,7 +433,7 @@ const HomePage = () => {
               <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Kategoriler</h2>
               {categories.length > 8 && (
                 <button
-                  onClick={() => navigate('/products')}
+                  onClick={() => navigate('/app/products')}
                   className="text-primary hover:text-primary-dark font-medium text-sm md:text-base transition-colors"
                 >
                   Tümünü Gör →
@@ -481,7 +481,7 @@ const HomePage = () => {
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Öne Çıkan Ürünler</h2>
               <button
-                onClick={() => navigate('/products?featured=true')}
+                onClick={() => navigate('/app/products?featured=true')}
                 className="text-primary hover:text-primary-dark font-medium"
               >
                 Tümünü Gör →
@@ -505,7 +505,7 @@ const HomePage = () => {
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Yeni Ürünler</h2>
               <button
-                onClick={() => navigate('/products?sort=newest')}
+                onClick={() => navigate('/app/products?sort=newest')}
                 className="text-primary hover:text-primary-dark font-medium"
               >
                 Tümünü Gör →

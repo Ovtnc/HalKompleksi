@@ -163,7 +163,7 @@ const AddProductPage = () => {
 
   useEffect(() => {
     if (!user || (user.activeRole !== 'seller' && !user.userRoles?.includes('seller'))) {
-      navigate('/profile');
+      navigate('/app/profile');
       return;
     }
     
@@ -454,7 +454,7 @@ const AddProductPage = () => {
       
       if (response.product || response) {
         alert('Ürün başarıyla eklendi!');
-        navigate('/seller/products');
+        navigate('/app/seller/products');
       }
     } catch (error: any) {
       console.error('Error creating product:', error);

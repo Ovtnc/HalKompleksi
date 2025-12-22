@@ -3,6 +3,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import ApiStatus from './components/ApiStatus';
 import Layout from './components/Layout';
+import LandingPage from './pages/LandingPage';
 import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
@@ -34,7 +35,8 @@ function App() {
         >
           <Routes>
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/" element={<Layout />}>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/app" element={<Layout />}>
               <Route index element={<HomePage />} />
               <Route path="products" element={<ProductsPage />} />
               <Route path="product/:id" element={<ProductDetailPage />} />
@@ -53,6 +55,10 @@ function App() {
               <Route path="admin/products/featured" element={<AdminFeaturedProductsPage />} />
               <Route path="admin/users/:userId" element={<AdminUserProductsPage />} />
             </Route>
+            {/* Redirect old routes to new structure */}
+            <Route path="/products" element={<Navigate to="/app/products" replace />} />
+            <Route path="/product/:id" element={<Navigate to="/app/product/:id" replace />} />
+            <Route path="/profile" element={<Navigate to="/app/profile" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>

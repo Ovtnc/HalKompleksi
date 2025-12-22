@@ -13,7 +13,7 @@ const Layout = () => {
   const isGuest = !user;
 
   // Redirect to login if trying to access protected routes
-  if ((location.pathname === '/profile' || location.pathname === '/favorites') && isGuest) {
+  if ((location.pathname === '/app/profile' || location.pathname === '/app/favorites') && isGuest) {
     navigate('/login');
     return null;
   }

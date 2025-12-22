@@ -16,7 +16,7 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/app')}
             className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
           >
             <img 
@@ -37,7 +37,7 @@ const Header = () => {
             {user ? (
               <>
                 <button
-                  onClick={() => navigate('/profile')}
+                  onClick={() => navigate('/app/profile')}
                   className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <span className="hidden sm:inline text-sm font-medium text-gray-700">

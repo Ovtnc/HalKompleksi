@@ -11,18 +11,18 @@ const BottomNavigation = () => {
   const isGuest = !user;
 
   const tabs = [
-    { id: 'home', path: '/', label: 'Anasayfa', icon: '🏠' },
+    { id: 'home', path: '/app', label: 'Anasayfa', icon: '🏠' },
     ...(isSeller ? [] : [
-      { id: 'products', path: '/products', label: 'Arama', icon: '🔍' },
-      { id: 'market', path: '/market-reports', label: 'Piyasa', icon: '📊' },
-      { id: 'favorites', path: '/favorites', label: 'Favoriler', icon: '❤️', requiresAuth: true },
+      { id: 'products', path: '/app/products', label: 'Arama', icon: '🔍' },
+      { id: 'market', path: '/app/market-reports', label: 'Piyasa', icon: '📊' },
+      { id: 'favorites', path: '/app/favorites', label: 'Favoriler', icon: '❤️', requiresAuth: true },
     ]),
-    { id: 'profile', path: '/profile', label: 'Profil', icon: '👤', requiresAuth: true },
+    { id: 'profile', path: '/app/profile', label: 'Profil', icon: '👤', requiresAuth: true },
   ];
 
   const isActive = (path: string) => {
-    if (path === '/') {
-      return location.pathname === '/';
+    if (path === '/app' || path === '/app/') {
+      return location.pathname === '/app' || location.pathname === '/app/';
     }
     return location.pathname.startsWith(path);
   };

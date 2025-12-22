@@ -69,7 +69,7 @@ const MyProductsPage = () => {
 
   useEffect(() => {
     if (!user || (user.activeRole !== 'seller' && !user.userRoles?.includes('seller'))) {
-      navigate('/profile');
+      navigate('/app/profile');
       return;
     }
     loadMyProducts();
@@ -181,7 +181,7 @@ const MyProductsPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <button
-              onClick={() => navigate('/seller/dashboard')}
+              onClick={() => navigate('/app/seller/dashboard')}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors font-medium"
             >
               <IoArrowBack className="w-5 h-5" />

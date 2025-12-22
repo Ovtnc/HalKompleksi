@@ -165,7 +165,7 @@ const EditProductPage = () => {
 
   useEffect(() => {
     if (!user || (user.activeRole !== 'seller' && !user.userRoles?.includes('seller'))) {
-      navigate('/profile');
+      navigate('/app/profile');
       return;
     }
     
@@ -262,7 +262,7 @@ const EditProductPage = () => {
     } catch (error: any) {
       console.error('❌ Error loading product:', error);
       alert(`Ürün yüklenirken bir hata oluştu: ${error.message || 'Bilinmeyen hata'}`);
-      navigate('/seller/products');
+      navigate('/app/seller/products');
     } finally {
       setInitialLoading(false);
     }
@@ -563,7 +563,7 @@ const EditProductPage = () => {
       
       if (response.product || response) {
         alert('Ürün başarıyla güncellendi!');
-        navigate('/seller/products');
+        navigate('/app/seller/products');
       }
     } catch (error: any) {
       console.error('Error updating product:', error);
@@ -596,7 +596,7 @@ const EditProductPage = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <button
-              onClick={() => navigate('/seller/products')}
+              onClick={() => navigate('/app/seller/products')}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors font-medium"
             >
               <IoArrowBack className="w-5 h-5" />
@@ -955,7 +955,7 @@ const EditProductPage = () => {
           <div className="flex gap-4">
             <button
               type="button"
-              onClick={() => navigate('/seller/products')}
+              onClick={() => navigate('/app/seller/products')}
               className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
             >
               İptal

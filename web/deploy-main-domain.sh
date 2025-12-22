@@ -133,9 +133,19 @@ echo -e "${GREEN}🔐 Setting permissions...${NC}"
 chown -R www-data:www-data "$DEPLOY_DIR"
 chmod -R 755 "$DEPLOY_DIR"
 
-# Create nginx configuration for main domain (if it doesn't exist)
+# Check if nginx config already exists and has web app setup
+NEEDS_UPDATE=false
 if [ ! -f "/etc/nginx/sites-available/$DOMAIN" ]; then
+    NEEDS_UPDATE=true
     echo -e "${GREEN}⚙️  Creating nginx configuration...${NC}"
+elif ! grep -q "try_files.*index.html" "/etc/nginx/sites-available/$DOMAIN"; then
+    NEEDS_UPDATE=true
+    echo -e "${YELLOW}⚠️  Updating existing nginx configuration...${NC}"
+    # Backup existing config
+    cp "/etc/nginx/sites-available/$DOMAIN" "/etc/nginx/sites-available/$DOMAIN.backup.$(date +%Y%m%d-%H%M%S)"
+fi
+
+if [ "$NEEDS_UPDATE" = true ]; then
     cat > "/etc/nginx/sites-available/$DOMAIN" <<EOF
 server {
     listen 80;
@@ -201,8 +211,9 @@ server {
     }
 }
 EOF
+    echo -e "${GREEN}✅ Nginx configuration created/updated${NC}"
 else
-    echo -e "${YELLOW}ℹ️  Nginx configuration already exists${NC}"
+    echo -e "${YELLOW}ℹ️  Nginx configuration already has web app setup, skipping...${NC}"
 fi
 
 # Enable site

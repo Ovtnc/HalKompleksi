@@ -99,7 +99,7 @@ const ProductsPage = () => {
       console.log('⚠️ User not logged in, redirecting to login...');
       navigate('/login', { 
         state: { 
-          from: `/product/${product._id || product.id}`,
+          from: `/app/product/${product._id || product.id}`,
           message: 'Ürün detaylarını görmek için lütfen giriş yapın'
         } 
       });
@@ -126,7 +126,7 @@ const ProductsPage = () => {
     });
     
     if (productId && productId !== 'undefined' && productId !== 'null') {
-      navigate(`/product/${productId}`);
+      navigate(`/app/product/${productId}`);
     } else {
       console.error('❌ Invalid product ID:', product);
     }

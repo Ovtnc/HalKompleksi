@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import ApiStatus from './components/ApiStatus';
@@ -22,6 +22,12 @@ import AdminUsersPage from './pages/AdminUsersPage';
 import AdminAllProductsPage from './pages/AdminAllProductsPage';
 import AdminFeaturedProductsPage from './pages/AdminFeaturedProductsPage';
 import AdminUserProductsPage from './pages/AdminUserProductsPage';
+
+// Redirect component for product detail page
+const ProductRedirect = () => {
+  const { id } = useParams<{ id: string }>();
+  return <Navigate to={`/app/product/${id}`} replace />;
+};
 
 function App() {
   return (
@@ -57,7 +63,7 @@ function App() {
             </Route>
             {/* Redirect old routes to new structure */}
             <Route path="/products" element={<Navigate to="/app/products" replace />} />
-            <Route path="/product/:id" element={<Navigate to="/app/product/:id" replace />} />
+            <Route path="/product/:id" element={<ProductRedirect />} />
             <Route path="/profile" element={<Navigate to="/app/profile" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -119,7 +119,7 @@ const HomePage = () => {
     const queryString = params.toString();
     console.log('🔍 Search params:', queryString);
     console.log('🔍 Full URL:', `/products${queryString ? `?${queryString}` : ''}`);
-    navigate(`/products${queryString ? `?${queryString}` : ''}`);
+    navigate(`/app/products${queryString ? `?${queryString}` : ''}`);
   };
 
   const handleFilterClick = () => {
@@ -170,7 +170,7 @@ const HomePage = () => {
     console.log('📍 Navigating to category:', slug);
     
     if (slug) {
-      navigate(`/products?category=${slug}`);
+      navigate(`/app/products?category=${slug}`);
     } else {
       console.error('Category slug is missing:', category);
     }
@@ -182,7 +182,7 @@ const HomePage = () => {
       console.log('⚠️ User not logged in, redirecting to login...');
       navigate('/login', { 
         state: { 
-          from: `/product/${product._id || product.id}`,
+          from: `/app/product/${product._id || product.id}`,
           message: 'Ürün detaylarını görmek için lütfen giriş yapın'
         } 
       });
@@ -211,8 +211,8 @@ const HomePage = () => {
     });
     
     if (productId && productId !== 'undefined' && productId !== 'null' && productId.length > 0) {
-      console.log('✅ Navigating to:', `/product/${productId}`);
-      navigate(`/product/${productId}`);
+      console.log('✅ Navigating to:', `/app/product/${productId}`);
+      navigate(`/app/product/${productId}`);
     } else {
       console.error('❌ Invalid product ID:', {
         productId,

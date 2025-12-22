@@ -267,7 +267,7 @@ const SellerDashboardPage = () => {
                 return (
                   <div
                     key={product._id || product.id}
-                    onClick={() => navigate(`/product/${product._id || product.id}`)}
+                    onClick={() => navigate(`/app/product/${product._id || product.id}`)}
                     className="bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-all"
                   >
                     <div className="relative aspect-square bg-gray-100">

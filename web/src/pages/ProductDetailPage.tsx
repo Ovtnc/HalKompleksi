@@ -87,7 +87,7 @@ const ProductDetailPage = () => {
       console.log('⚠️ User not logged in, redirecting to login...');
       navigate('/login', { 
         state: { 
-          from: `/product/${id}`,
+          from: `/app/product/${id}`,
           message: 'Ürün detaylarını görmek için lütfen giriş yapın'
         } 
       });

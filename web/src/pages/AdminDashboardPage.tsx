@@ -316,7 +316,7 @@ const AdminDashboardPage = () => {
                         </span>
                       )}
                       <button
-                        onClick={() => navigate(`/product/${product._id}`)}
+                        onClick={() => navigate(`/app/product/${product._id}`)}
                         className="p-2 text-gray-400 hover:text-primary transition-colors"
                       >
                         <IoChevronForwardOutline className="w-5 h-5" />

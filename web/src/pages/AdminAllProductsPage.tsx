@@ -262,7 +262,7 @@ const AdminAllProductsPage = () => {
 
                     <ProductCard
                       product={product}
-                      onClick={() => navigate(`/product/${productId}`)}
+                      onClick={() => navigate(`/app/product/${productId}`)}
                     />
 
                     {/* Admin Actions */}
@@ -312,7 +312,7 @@ const AdminAllProductsPage = () => {
                       </div>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => navigate(`/product/${productId}`)}
+                          onClick={() => navigate(`/app/product/${productId}`)}
                           className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
                           title="Detayları Gör"
                         >

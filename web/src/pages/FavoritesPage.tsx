@@ -50,7 +50,7 @@ const FavoritesPage = () => {
     productId = String(productId);
     
     if (productId && productId !== 'undefined' && productId !== 'null') {
-      navigate(`/product/${productId}`);
+      navigate(`/app/product/${productId}`);
     } else {
       console.error('❌ Invalid product ID:', product);
     }

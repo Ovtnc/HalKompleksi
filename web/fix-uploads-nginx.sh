@@ -98,8 +98,8 @@ server {
         proxy_cache_bypass \$http_upgrade;
     }
 
-    # Uploads - FIXED: Use exact path matching
-    location /uploads/ {
+    # Uploads - FIXED: Use exact path matching, MUST come before location /
+    location ^~ /uploads/ {
         alias $UPLOADS_DIR/;
         expires 1y;
         add_header Cache-Control "public, immutable";
@@ -114,6 +114,9 @@ server {
             image/svg+xml svg;
         }
         default_type application/octet-stream;
+        
+        # Disable SPA routing for uploads
+        try_files \$uri =404;
     }
 
     # Privacy policy and terms (from backend)
@@ -176,8 +179,8 @@ server {
         proxy_cache_bypass \$http_upgrade;
     }
 
-    # Uploads - FIXED: Use exact path matching
-    location /uploads/ {
+    # Uploads - FIXED: Use exact path matching, MUST come before location /
+    location ^~ /uploads/ {
         alias $UPLOADS_DIR/;
         expires 1y;
         add_header Cache-Control "public, immutable";
@@ -192,6 +195,9 @@ server {
             image/svg+xml svg;
         }
         default_type application/octet-stream;
+        
+        # Disable SPA routing for uploads
+        try_files \$uri =404;
     }
 
     # Privacy policy and terms (from backend)

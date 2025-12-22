@@ -87,7 +87,11 @@ echo -e "${GREEN}📁 Current directory: $(pwd)${NC}"
 
 # Install dependencies
 echo -e "${GREEN}📦 Installing dependencies...${NC}"
-npm ci --silent --production=false
+if [ -f "package-lock.json" ]; then
+    npm ci --silent --production=false
+else
+    npm install --silent --production=false
+fi
 
 # Build the application
 echo -e "${GREEN}🏗️  Building application...${NC}"

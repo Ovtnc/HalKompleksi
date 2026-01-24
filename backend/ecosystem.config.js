@@ -12,7 +12,9 @@ module.exports = {
       NODE_ENV: 'production',
       PORT: 5001,
       MONGODB_URI: 'mongodb://localhost:27017/hal-kompleksi',
-      JWT_SECRET: process.env.JWT_SECRET || 'your-super-secret-jwt-key-here'
+      JWT_SECRET: process.env.JWT_SECRET || 'your-super-secret-jwt-key-here',
+      EMAIL_USER: process.env.EMAIL_USER || 'destek.halkompleksi@gmail.com',
+      EMAIL_PASS: process.env.EMAIL_PASS || ''
     },
     error_file: './logs/error.log',
     out_file: './logs/out.log',

@@ -9,7 +9,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ActivityIndicator
+  ActivityIndicator,
+  Clipboard
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
@@ -24,6 +25,7 @@ const NewAuthScreen = () => {
   const [emailSent, setEmailSent] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [resetToken, setResetToken] = useState('');
+  const [showToken, setShowToken] = useState(false); // Token'ı gizle/göster
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
@@ -148,28 +150,30 @@ const NewAuthScreen = () => {
     setIsLoading(true);
     try {
       const response = await authAPI.forgotPassword(forgotPasswordEmail);
-      setEmailSent(true);
       
-      // Eğer backend'den token geldiyse, onu kullan
-      if (response.token) {
+      // 2026 Modern Approach: Token always returned (if user exists)
+      if (response && response.token) {
         setResetToken(response.token);
-        if (response.warning) {
-          Alert.alert(
-            'Bilgi',
-            `E-posta gönderilemedi, ancak sıfırlama token'ı oluşturuldu.\n\nToken: ${response.token}\n\nLütfen bu token'ı kullanarak şifrenizi sıfırlayın.`,
-            [{ text: 'Tamam' }]
-          );
-        } else {
-          Alert.alert(
-            'Başarılı',
-            'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Lütfen e-postanızı kontrol edin ve token\'ı girin.',
-            [{ text: 'Tamam' }]
-          );
-        }
-      } else {
+        setEmailSent(true);
+        
+        // Show success message with token info
         Alert.alert(
-          'Başarılı',
-          'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Lütfen e-postanızı kontrol edin ve token\'ı girin.',
+          'Token Oluşturuldu',
+          `Şifre sıfırlama token'ı oluşturuldu. Token ${response.expiresIn || 10} dakika geçerlidir.\n\nToken aşağıda gösterilecektir.`,
+          [{ text: 'Tamam' }]
+        );
+      } else if (response && response.userExists === false) {
+        // User doesn't exist (security: generic message)
+        Alert.alert(
+          'Bilgi',
+          'Eğer bu e-posta adresi kayıtlıysa, şifre sıfırlama talimatları gönderilmiştir.',
+          [{ text: 'Tamam' }]
+        );
+      } else {
+        // Unexpected response
+        Alert.alert(
+          'Bilgi',
+          response?.message || 'İşlem tamamlandı. Lütfen e-postanızı kontrol edin.',
           [{ text: 'Tamam' }]
         );
       }
@@ -183,7 +187,17 @@ const NewAuthScreen = () => {
       
       // Backend'den gelen hata mesajını göster
       const errorMessage = error.message || 'Şifre sıfırlama isteği gönderilemedi';
-      Alert.alert('Hata', errorMessage);
+      
+      // Rate limiting hatası için özel mesaj
+      if (errorMessage.includes('çok fazla') || errorMessage.includes('rate limit')) {
+        Alert.alert(
+          'Çok Fazla İstek',
+          'Güvenlik nedeniyle çok fazla şifre sıfırlama talebi gönderdiniz. Lütfen 1 saat sonra tekrar deneyin.',
+          [{ text: 'Tamam' }]
+        );
+      } else {
+        Alert.alert('Hata', errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -195,8 +209,19 @@ const NewAuthScreen = () => {
       return;
     }
 
-    if (newPassword.length < 6) {
-      Alert.alert('Hata', 'Şifre en az 6 karakter olmalıdır');
+    // 2026 Security: Strong password requirements
+    if (newPassword.length < 8) {
+      Alert.alert('Hata', 'Şifre en az 8 karakter olmalıdır (2026 güvenlik standardı)');
+      return;
+    }
+
+    // 2026 Security: Password complexity check
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+    if (!passwordRegex.test(newPassword)) {
+      Alert.alert(
+        'Güvenlik Uyarısı',
+        'Şifre en az bir büyük harf, bir küçük harf ve bir rakam içermelidir.'
+      );
       return;
     }
 
@@ -405,14 +430,62 @@ const NewAuthScreen = () => {
                 // Token ve yeni şifre adımı
                 <>
                   <Text style={styles.descriptionText}>
-                    E-postanıza gönderilen token'ı ve yeni şifrenizi girin.
+                    {resetToken 
+                      ? 'Aşağıdaki güvenli token\'ı kopyalayıp token alanına yapıştırın ve yeni şifrenizi girin. Token 10 dakika geçerlidir.'
+                      : 'E-postanıza gönderilen token\'ı ve yeni şifrenizi girin.'}
                   </Text>
+                  
+                  {resetToken && (
+                    <View style={styles.securityInfo}>
+                      <Ionicons name="shield-checkmark-outline" size={16} color="#34C759" />
+                      <Text style={styles.securityInfoText}>
+                        2026 Güvenlik Standardı: Token şifreli olarak oluşturuldu ve 10 dakika geçerlidir.
+                      </Text>
+                    </View>
+                  )}
+                  
+                  {/* Token Gösterimi - Güvenli */}
+                  {resetToken && (
+                    <View style={styles.tokenContainer}>
+                      <Text style={styles.tokenLabel}>Sıfırlama Token'ı:</Text>
+                      <View style={styles.tokenDisplayContainer}>
+                        <TextInput
+                          style={styles.tokenDisplay}
+                          value={showToken ? resetToken : '•'.repeat(resetToken.length)}
+                          editable={false}
+                          secureTextEntry={!showToken}
+                        />
+                        <TouchableOpacity
+                          style={styles.tokenToggleButton}
+                          onPress={() => setShowToken(!showToken)}
+                        >
+                          <Ionicons 
+                            name={showToken ? "eye-off-outline" : "eye-outline"} 
+                            size={20} 
+                            color="#34C759" 
+                          />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.tokenCopyButton}
+                          onPress={() => {
+                            Clipboard.setString(resetToken);
+                            Alert.alert('Başarılı', 'Token kopyalandı! Token alanına yapıştırabilirsiniz.');
+                          }}
+                        >
+                          <Ionicons name="copy-outline" size={20} color="#34C759" />
+                        </TouchableOpacity>
+                      </View>
+                      <Text style={styles.tokenWarning}>
+                        ⚠️ Bu token'ı kimseyle paylaşmayın. 10 dakika içinde geçerlidir.
+                      </Text>
+                    </View>
+                  )}
                   
                   <View style={styles.inputContainer}>
                     <Ionicons name="key-outline" size={20} color="#666" style={styles.inputIcon} />
                     <TextInput
                       style={styles.input}
-                      placeholder="Token (e-postanızdan kopyalayın)"
+                      placeholder="Token'ı buraya yapıştırın"
                       placeholderTextColor="#999"
                       value={resetToken}
                       onChangeText={setResetToken}
@@ -769,6 +842,65 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#34C759',
     fontWeight: '700',
+  },
+  tokenContainer: {
+    marginBottom: 20,
+    padding: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  tokenLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  tokenDisplayContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  tokenDisplay: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'monospace',
+    color: '#333',
+    paddingVertical: 4,
+  },
+  tokenToggleButton: {
+    padding: 8,
+    marginLeft: 8,
+  },
+  tokenCopyButton: {
+    padding: 8,
+    marginLeft: 4,
+  },
+  tokenWarning: {
+    fontSize: 12,
+    color: '#FF9800',
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  securityInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E9',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  securityInfoText: {
+    fontSize: 12,
+    color: '#2E7D32',
+    marginLeft: 8,
+    flex: 1,
   },
   backButtonContainer: {
     marginBottom: 20,

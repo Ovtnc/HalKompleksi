@@ -161,12 +161,29 @@ export const authAPI = {
       body: JSON.stringify({ email }),
     }, 15000);
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Şifre sıfırlama isteği başarısız' }));
-      throw new Error(errorData.message || 'Şifre sıfırlama isteği başarısız');
+    // 2026: Handle rate limiting (429) gracefully
+    if (response.status === 429) {
+      const errorData = await response.json().catch(() => ({ message: 'Çok fazla istek. Lütfen 1 saat sonra tekrar deneyin.' }));
+      throw new Error(errorData.message || 'Çok fazla şifre sıfırlama talebi. Lütfen 1 saat sonra tekrar deneyin.');
     }
 
-    return await response.json();
+    // 2026: Always try to parse response, even if status is not 200
+    // Backend may return 200 with token even if email fails
+    const data = await response.json().catch(() => null);
+    
+    if (!response.ok) {
+      // Only throw error if we couldn't parse response or got real error
+      if (!data) {
+        throw new Error('Şifre sıfırlama isteği başarısız');
+      }
+      // If we have data, it might still contain token (graceful degradation)
+      if (data.token) {
+        return data; // Return data even if status is not 200
+      }
+      throw new Error(data.message || 'Şifre sıfırlama isteği başarısız');
+    }
+
+    return data;
   },
 
   resetPassword: async (token: string, password: string) => {

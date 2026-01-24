@@ -52,6 +52,24 @@ const userSchema = new mongoose.Schema({
   resetPasswordExpiry: {
     type: Date
   },
+  securityQuestion: {
+    type: String,
+    required: false,
+    enum: [
+      'Annemin kızlık soyadı nedir?',
+      'İlk evcil hayvanımın adı nedir?',
+      'En sevdiğim öğretmenimin adı nedir?',
+      'Doğduğum şehir neresidir?',
+      'İlk okuduğum okulun adı nedir?',
+      'En sevdiğim yemek nedir?',
+      'Çocukluk lakabım nedir?',
+      'En iyi arkadaşımın adı nedir?'
+    ]
+  },
+  securityAnswer: {
+    type: String, // Hash'lenmiş olarak saklanacak
+    required: false
+  },
   profileImage: {
     type: String,
     default: null
@@ -167,20 +185,38 @@ userSchema.pre('save', function(next) {
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  
-  try {
-    const salt = await bcrypt.genSalt(12);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
+  // Hash password if modified
+  if (this.isModified('password')) {
+    try {
+      const salt = await bcrypt.genSalt(12);
+      this.password = await bcrypt.hash(this.password, salt);
+    } catch (error) {
+      return next(error);
+    }
   }
+  
+  // Hash security answer if modified
+  if (this.isModified('securityAnswer') && this.securityAnswer) {
+    try {
+      const salt = await bcrypt.genSalt(12);
+      this.securityAnswer = await bcrypt.hash(this.securityAnswer.toLowerCase().trim(), salt);
+    } catch (error) {
+      return next(error);
+    }
+  }
+  
+  next();
 });
 
 // Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Compare security answer method
+userSchema.methods.compareSecurityAnswer = async function(candidateAnswer) {
+  if (!this.securityAnswer) return false;
+  return await bcrypt.compare(candidateAnswer.toLowerCase().trim(), this.securityAnswer);
 };
 
 // Remove password from JSON output

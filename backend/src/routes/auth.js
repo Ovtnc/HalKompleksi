@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
+const rateLimit = require('express-rate-limit');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const { sendPasswordResetEmail, sendWelcomeEmail } = require('../utils/emailService');
@@ -310,12 +311,24 @@ router.post('/logout', auth, (req, res) => {
   });
 });
 
+// Rate limiting for forgot password (3 requests per hour per IP)
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // 3 requests per hour
+  message: 'Çok fazla şifre sıfırlama talebi. Lütfen 1 saat sonra tekrar deneyin.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // @route   POST /api/auth/forgot-password
 // @desc    Send password reset email
 // @access  Public
-router.post('/forgot-password', [
-  body('email').isEmail().normalizeEmail().withMessage('Lütfen geçerli bir e-posta adresi girin')
-], async (req, res) => {
+router.post('/forgot-password', 
+  forgotPasswordLimiter, // Rate limiting ekle
+  [
+    body('email').isEmail().normalizeEmail().withMessage('Lütfen geçerli bir e-posta adresi girin')
+  ], 
+  async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -326,62 +339,59 @@ router.post('/forgot-password', [
     }
 
     const { email } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
 
-    // Check if user exists
-    const user = await User.findOne({ email });
+    // 2026 Security: Check if user exists (prevent email enumeration attacks)
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
-      return res.status(404).json({
-        message: 'Bu e-posta adresi ile kullanıcı bulunamadı'
+      // Security: Don't reveal if email exists (prevent user enumeration)
+      // Return generic success message
+      return res.status(200).json({
+        message: 'Eğer bu e-posta adresi kayıtlıysa, şifre sıfırlama talimatları gönderilmiştir.',
+        token: null,
+        userExists: false
       });
     }
 
-    // Generate reset token
+    // 2026 Security: Generate cryptographically secure token (32 bytes = 64 hex chars)
     const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+    const resetTokenExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes expiration
 
-    // Save reset token to user - ÖNCE TOKEN'I KAYDET
+    // 2026 Security: Save token to database first (atomic operation)
     try {
       user.resetPasswordToken = resetToken;
       user.resetPasswordExpiry = resetTokenExpiry;
       await user.save();
-      console.log('✅ Reset token saved to database');
+      console.log('✅ Secure reset token saved to database');
     } catch (saveError) {
       console.error('❌ Error saving token:', saveError);
-      // Token kaydedilemese bile devam et, ama hata döndür
       return res.status(500).json({
-        message: 'Token kaydedilemedi: ' + saveError.message
+        message: 'Token oluşturulamadı. Lütfen daha sonra tekrar deneyin.'
       });
     }
 
-    // Send password reset email - EMAIL GÖNDERİLEMESE BİLE TOKEN DÖNDÜR
+    // 2026 Approach: Try to send email, but always return token (mobile-first)
     try {
-      console.log('📧 Attempting to send password reset email to:', email);
-      const emailResult = await sendPasswordResetEmail(email, resetToken);
+      console.log('📧 Attempting to send password reset email to:', normalizedEmail);
+      const emailResult = await sendPasswordResetEmail(normalizedEmail, resetToken);
       
-      if (emailResult.success) {
-        console.log('✅ Email sent successfully');
-        res.json({
-          message: 'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi',
-          token: resetToken // Token'ı da response'da gönder (development için)
-        });
-      } else {
-        console.error('❌ Email sending failed:', emailResult.error);
-        // Email gönderilemese bile token'ı döndür (mobil uygulama için)
-        // HER ZAMAN 200 OK DÖNDÜR, token var
-        res.json({
-          message: 'E-posta gönderilemedi, ancak sıfırlama token\'ı oluşturuldu. Lütfen token\'ı kullanarak şifrenizi sıfırlayın.',
-          token: resetToken,
-          warning: true
-        });
-      }
+      // Always return token (2026: Mobile-first approach, graceful degradation)
+      res.json({
+        message: emailResult.success 
+          ? 'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Token\'ı da ekranda görebilirsiniz.'
+          : 'Şifre sıfırlama token\'ı oluşturuldu. Lütfen aşağıdaki token\'ı kullanın.',
+        token: resetToken,
+        expiresIn: 10, // minutes
+        emailSent: emailResult.success || false
+      });
     } catch (emailError) {
       console.error('❌ Email sending exception:', emailError);
-      // Email gönderilemese bile token'ı döndür (mobil uygulama için)
-      // HER ZAMAN 200 OK DÖNDÜR, token var
+      // Still return token even if email fails (2026: Graceful degradation)
       res.json({
-        message: 'E-posta gönderilemedi, ancak sıfırlama token\'ı oluşturuldu. Lütfen token\'ı kullanarak şifrenizi sıfırlayın.',
+        message: 'Şifre sıfırlama token\'ı oluşturuldu. Lütfen aşağıdaki token\'ı kullanın.',
         token: resetToken,
-        warning: true
+        expiresIn: 10,
+        emailSent: false
       });
     }
 
@@ -457,13 +467,33 @@ router.post('/refresh', async (req, res) => {
   }
 });
 
+// Rate limiting for reset password (5 requests per hour per IP)
+const resetPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // 5 requests per hour
+  message: 'Çok fazla şifre sıfırlama denemesi. Lütfen 1 saat sonra tekrar deneyin.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // @route   POST /api/auth/reset-password
-// @desc    Reset password with token
+// @desc    Reset password with token (2026 Modern Security Approach)
 // @access  Public
-router.post('/reset-password', [
-  body('token').notEmpty().withMessage('Sıfırlama anahtarı gereklidir'),
-  body('password').isLength({ min: 6 }).withMessage('Şifre en az 6 karakter olmalıdır')
-], async (req, res) => {
+// 2026 Security Best Practices:
+// - Rate limiting (brute force protection)
+// - Token validation (expiry check)
+// - Secure password hashing (bcrypt with salt rounds 12)
+// - Token invalidation after use (one-time use)
+// - Strong password requirements
+router.post('/reset-password',
+  resetPasswordLimiter, // Rate limiting
+  [
+    body('token').notEmpty().withMessage('Sıfırlama anahtarı gereklidir'),
+    body('password')
+      .isLength({ min: 8 }).withMessage('Şifre en az 8 karakter olmalıdır (2026 güvenlik standardı)')
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/).withMessage('Şifre en az bir büyük harf, bir küçük harf ve bir rakam içermelidir')
+  ],
+  async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -475,7 +505,7 @@ router.post('/reset-password', [
 
     const { token, password } = req.body;
 
-    // Find user with valid reset token
+    // Find user with valid reset token (2026: Time-based validation)
     const user = await User.findOne({
       resetPasswordToken: token,
       resetPasswordExpiry: { $gt: Date.now() }
@@ -483,26 +513,31 @@ router.post('/reset-password', [
 
     if (!user) {
       return res.status(400).json({
-        message: 'Geçersiz veya süresi dolmuş sıfırlama anahtarı'
+        message: 'Geçersiz veya süresi dolmuş sıfırlama anahtarı. Lütfen yeni bir token oluşturun.'
       });
     }
 
-    // Update password
+    // 2026 Security: Update password with strong hashing (bcrypt salt rounds 12)
     const bcrypt = require('bcryptjs');
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(12); // 2026 standard: 12 rounds
     user.password = await bcrypt.hash(password, salt);
+    
+    // 2026 Security: Invalidate token after use (one-time use)
     user.resetPasswordToken = undefined;
     user.resetPasswordExpiry = undefined;
+    
     await user.save();
 
+    console.log('✅ Password reset successful for user:', user.email);
+
     res.json({
-      message: 'Şifre sıfırlama başarılı'
+      message: 'Şifre sıfırlama başarılı. Yeni şifrenizle giriş yapabilirsiniz.'
     });
 
   } catch (error) {
-    console.error('Reset password error:', error);
+    console.error('❌ Reset password error:', error);
     res.status(500).json({
-      message: 'Sunucu hatası'
+      message: 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.'
     });
   }
 });

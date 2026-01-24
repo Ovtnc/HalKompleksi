@@ -5,11 +5,16 @@
 // TypeScript global declaration for React Native's __DEV__
 declare const __DEV__: boolean;
 
+// 🎯 LOCAL DEVELOPMENT - Test için localhost kullan
+const API_BASE_URL = __DEV__ ? 'http://localhost:5001/api' : 'https://halkompleksi.com/api';
+const WEB_BASE_URL = __DEV__ ? 'http://localhost:3000' : 'https://halkompleksi.com';
+const DOMAIN = __DEV__ ? 'localhost' : 'halkompleksi.com';
+
 // 🎯 CANLI SUNUCU - DOMAIN (Natro DNS)
 // ⚠️ PRODUCTION: HTTPS ZORUNLU (TestFlight/App Store için)
-const API_BASE_URL = 'https://halkompleksi.com/api';
-const WEB_BASE_URL = 'https://halkompleksi.com';
-const DOMAIN = 'halkompleksi.com';
+// const API_BASE_URL = 'https://halkompleksi.com/api';
+// const WEB_BASE_URL = 'https://halkompleksi.com';
+// const DOMAIN = 'halkompleksi.com';
 
 // ⚠️ HTTP sadece development için kullanın (App Store reddeder!)
 // Development için:

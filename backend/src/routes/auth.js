@@ -223,10 +223,14 @@ router.post('/login', [
     }
 
     const { email, password } = req.body;
+    
+    // Normalize email (same as registration)
+    const normalizedEmail = email.toLowerCase().trim();
 
-    // Find user
-    const user = await User.findOne({ email });
+    // Find user with normalized email
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
+      console.log('❌ Login failed: User not found for email:', normalizedEmail);
       return res.status(400).json({
         message: 'Geçersiz kimlik bilgileri'
       });
@@ -235,10 +239,13 @@ router.post('/login', [
     // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      console.log('❌ Login failed: Password mismatch for user:', user.email);
       return res.status(400).json({
         message: 'Geçersiz kimlik bilgileri'
       });
     }
+    
+    console.log('✅ Login successful for user:', user.email);
 
     // Check if account is active
     if (!user.isActive) {
@@ -312,12 +319,17 @@ router.post('/logout', auth, (req, res) => {
 });
 
 // Rate limiting for forgot password (3 requests per hour per IP)
+// Development: More lenient, Production: Strict
 const forgotPasswordLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // 3 requests per hour
+  max: process.env.NODE_ENV === 'production' ? 3 : 10, // 3 in production, 10 in development
   message: 'Çok fazla şifre sıfırlama talebi. Lütfen 1 saat sonra tekrar deneyin.',
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting for localhost in development
+    return process.env.NODE_ENV !== 'production' && req.ip === '::1';
+  }
 });
 
 // @route   POST /api/auth/forgot-password
@@ -517,17 +529,18 @@ router.post('/reset-password',
       });
     }
 
-    // 2026 Security: Update password with strong hashing (bcrypt salt rounds 12)
-    const bcrypt = require('bcryptjs');
-    const salt = await bcrypt.genSalt(12); // 2026 standard: 12 rounds
-    user.password = await bcrypt.hash(password, salt);
+    // 2026 Security: Update password (User model's pre-save hook will hash it)
+    // Don't hash manually - let the User model's pre('save') hook handle it
+    // This ensures consistent hashing with salt rounds 12
+    user.password = password; // Pre-save hook will hash this automatically
     
     // 2026 Security: Invalidate token after use (one-time use)
     user.resetPasswordToken = undefined;
     user.resetPasswordExpiry = undefined;
     
+    // Save user - pre('save') hook will hash the password
     await user.save();
-
+    
     console.log('✅ Password reset successful for user:', user.email);
 
     res.json({

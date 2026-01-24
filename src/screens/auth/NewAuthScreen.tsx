@@ -362,8 +362,10 @@ const NewAuthScreen = () => {
                 style={styles.forgotPasswordButton}
                 onPress={() => {
                   console.log('🔓 Şifremi Unuttum butonuna tıklandı');
+                  console.log('Current state - isLogin:', isLogin, 'showForgotPassword:', showForgotPassword);
                   setShowForgotPassword(true);
                   setIsLogin(false); // Formu göstermek için isLogin'i false yap
+                  console.log('State updated - showForgotPassword: true, isLogin: false');
                 }}
                 activeOpacity={0.7}
               >
@@ -837,6 +839,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
+    minHeight: 50, // Minimum height to ensure visibility
+    zIndex: 10, // Ensure it's above other elements
   },
   forgotPasswordText: {
     fontSize: 16,

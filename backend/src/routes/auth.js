@@ -365,43 +365,59 @@ router.post('/forgot-password',
       });
     }
 
-    // 2026 Security: Generate cryptographically secure token (32 bytes = 64 hex chars)
+    // 2026 Security: Generate 4-digit verification code (sadece rakam)
+    // 1000-9999 arası, sadece rakamlardan oluşan kod
+    let resetCode = Math.floor(1000 + Math.random() * 9000).toString();
+    
+    // Güvenlik kontrolü: Kodun sadece rakam olduğundan emin ol
+    if (!/^\d{4}$/.test(resetCode)) {
+      resetCode = Math.floor(1000 + Math.random() * 9000).toString();
+      if (!/^\d{4}$/.test(resetCode)) {
+        return res.status(500).json({
+          message: 'Kod oluşturulamadı. Lütfen tekrar deneyin.'
+        });
+      }
+    }
+    const resetCodeExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes expiration
+    
+    // Also generate token for final password reset (after code verification)
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetTokenExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes expiration
 
-    // 2026 Security: Save token to database first (atomic operation)
+    // 2026 Security: Save code and token to database first (atomic operation)
     try {
-      user.resetPasswordToken = resetToken;
+      user.resetPasswordCode = resetCode;
+      user.resetPasswordCodeExpiry = resetCodeExpiry;
+      user.resetPasswordToken = resetToken; // Token will be used after code verification
       user.resetPasswordExpiry = resetTokenExpiry;
       await user.save();
-      console.log('✅ Secure reset token saved to database');
     } catch (saveError) {
-      console.error('❌ Error saving token:', saveError);
+      console.error('❌ Error saving code:', saveError);
       return res.status(500).json({
-        message: 'Token oluşturulamadı. Lütfen daha sonra tekrar deneyin.'
+        message: 'Kod oluşturulamadı. Lütfen daha sonra tekrar deneyin.'
       });
     }
 
-    // 2026 Approach: Try to send email, but always return token (mobile-first)
+    // 2026 Approach: Try to send email with 4-digit code, but always return code (mobile-first)
     try {
       console.log('📧 Attempting to send password reset email to:', normalizedEmail);
-      const emailResult = await sendPasswordResetEmail(normalizedEmail, resetToken);
+      const emailResult = await sendPasswordResetEmail(normalizedEmail, resetCode); // Send code instead of token
       
-      // Always return token (2026: Mobile-first approach, graceful degradation)
+      // Always return code (2026: Mobile-first approach, graceful degradation)
       res.json({
         message: emailResult.success 
-          ? 'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Token\'ı da ekranda görebilirsiniz.'
-          : 'Şifre sıfırlama token\'ı oluşturuldu. Lütfen aşağıdaki token\'ı kullanın.',
-        token: resetToken,
+          ? 'Şifre sıfırlama kodu e-posta adresinize gönderildi. 4 haneli kodu girin.'
+          : 'Şifre sıfırlama kodu oluşturuldu. Lütfen aşağıdaki 4 haneli kodu girin.',
+        code: resetCode, // 4 haneli kod
         expiresIn: 10, // minutes
         emailSent: emailResult.success || false
       });
     } catch (emailError) {
       console.error('❌ Email sending exception:', emailError);
-      // Still return token even if email fails (2026: Graceful degradation)
+      // Still return code even if email fails (2026: Graceful degradation)
       res.json({
-        message: 'Şifre sıfırlama token\'ı oluşturuldu. Lütfen aşağıdaki token\'ı kullanın.',
-        token: resetToken,
+        message: 'Şifre sıfırlama kodu oluşturuldu. Lütfen aşağıdaki 4 haneli kodu girin.',
+        code: resetCode,
         expiresIn: 10,
         emailSent: false
       });
@@ -422,7 +438,6 @@ router.post('/forgot-password',
       if (email) {
         const user = await User.findOne({ email });
         if (user && user.resetPasswordToken) {
-          console.log('⚠️  Error occurred but token exists, returning token anyway');
           res.json({
             message: 'Bir hata oluştu, ancak sıfırlama token\'ı oluşturuldu. Lütfen token\'ı kullanarak şifrenizi sıfırlayın.',
             token: user.resetPasswordToken,
@@ -488,8 +503,68 @@ const resetPasswordLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Rate limiting for code verification (10 requests per hour per IP)
+const verifyCodeLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // 10 requests per hour
+  message: 'Çok fazla kod doğrulama denemesi. Lütfen 1 saat sonra tekrar deneyin.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// @route   POST /api/auth/verify-reset-code
+// @desc    Verify 4-digit reset code (2026 Modern Security Approach)
+// @access  Public
+router.post('/verify-reset-code',
+  verifyCodeLimiter, // Rate limiting
+  [
+  body('email').isEmail().normalizeEmail().withMessage('Lütfen geçerli bir e-posta adresi girin'),
+  body('code')
+    .isLength({ min: 4, max: 4 }).withMessage('Kod 4 haneli olmalıdır')
+    .matches(/^\d{4}$/).withMessage('Kod sadece rakamlardan oluşmalıdır')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        message: 'Doğrulama başarısız',
+        errors: errors.array()
+      });
+    }
+
+    const { email, code } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Find user with valid reset code
+    const user = await User.findOne({
+      email: normalizedEmail,
+      resetPasswordCode: code,
+      resetPasswordCodeExpiry: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        message: 'Geçersiz veya süresi dolmuş kod. Lütfen yeni bir kod oluşturun.'
+      });
+    }
+
+    // Code is valid - return token for password reset
+    res.json({
+      message: 'Kod doğrulandı. Yeni şifrenizi belirleyebilirsiniz.',
+      token: user.resetPasswordToken, // Token for final password reset
+      expiresIn: Math.floor((user.resetPasswordExpiry - Date.now()) / 60000) // minutes remaining
+    });
+
+  } catch (error) {
+    console.error('❌ Verify reset code error:', error);
+    res.status(500).json({
+      message: 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.'
+    });
+  }
+});
+
 // @route   POST /api/auth/reset-password
-// @desc    Reset password with token (2026 Modern Security Approach)
+// @desc    Reset password with token (after code verification)
 // @access  Public
 // 2026 Security Best Practices:
 // - Rate limiting (brute force protection)
@@ -525,18 +600,18 @@ router.post('/reset-password',
 
     if (!user) {
       return res.status(400).json({
-        message: 'Geçersiz veya süresi dolmuş sıfırlama anahtarı. Lütfen yeni bir token oluşturun.'
+        message: 'Geçersiz veya süresi dolmuş sıfırlama anahtarı. Lütfen yeni bir kod oluşturun.'
       });
     }
 
     // 2026 Security: Update password (User model's pre-save hook will hash it)
-    // Don't hash manually - let the User model's pre('save') hook handle it
-    // This ensures consistent hashing with salt rounds 12
     user.password = password; // Pre-save hook will hash this automatically
     
-    // 2026 Security: Invalidate token after use (one-time use)
+    // 2026 Security: Invalidate token and code after use (one-time use)
     user.resetPasswordToken = undefined;
     user.resetPasswordExpiry = undefined;
+    user.resetPasswordCode = undefined;
+    user.resetPasswordCodeExpiry = undefined;
     
     // Save user - pre('save') hook will hash the password
     await user.save();

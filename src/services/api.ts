@@ -168,22 +168,37 @@ export const authAPI = {
     }
 
     // 2026: Always try to parse response, even if status is not 200
-    // Backend may return 200 with token even if email fails
     const data = await response.json().catch(() => null);
     
     if (!response.ok) {
-      // Only throw error if we couldn't parse response or got real error
       if (!data) {
         throw new Error('Şifre sıfırlama isteği başarısız');
       }
-      // If we have data, it might still contain token (graceful degradation)
-      if (data.token) {
-        return data; // Return data even if status is not 200
+      // If we have data with code, return it even if status is not 200
+      if (data.code) {
+        return data;
       }
       throw new Error(data.message || 'Şifre sıfırlama isteği başarısız');
     }
 
     return data;
+  },
+
+  verifyResetCode: async (email: string, code: string) => {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/auth/verify-reset-code`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, code }),
+    }, 15000);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Kod doğrulama başarısız' }));
+      throw new Error(errorData.message || 'Kod doğrulama başarısız');
+    }
+
+    return await response.json();
   },
 
   resetPassword: async (token: string, password: string) => {

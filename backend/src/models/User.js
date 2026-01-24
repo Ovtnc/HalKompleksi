@@ -52,6 +52,14 @@ const userSchema = new mongoose.Schema({
   resetPasswordExpiry: {
     type: Date
   },
+  resetPasswordCode: {
+    type: String, // 4 haneli kod
+    required: false
+  },
+  resetPasswordCodeExpiry: {
+    type: Date, // Kod geçerlilik süresi (10 dakika)
+    required: false
+  },
   securityQuestion: {
     type: String,
     required: false,

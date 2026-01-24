@@ -23,9 +23,11 @@ const NewAuthScreen = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [codeVerified, setCodeVerified] = useState(false); // Kod doğrulandı mı?
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
-  const [resetToken, setResetToken] = useState('');
-  const [showToken, setShowToken] = useState(false); // Token'ı gizle/göster
+  const [resetCode, setResetCode] = useState(''); // Backend'den gelen 4 haneli kod (gösterim için)
+  const [resetCodeInput, setResetCodeInput] = useState(''); // Kullanıcının girdiği kod (doğrulama için)
+  const [resetToken, setResetToken] = useState(''); // Token (kod doğrulandıktan sonra)
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
@@ -77,7 +79,6 @@ const NewAuthScreen = () => {
       await login(loginData.email, loginData.password, rememberMe);
       // Login successful - AuthContext will automatically navigate to the main page
     } catch (error: any) {
-      console.error('Login error:', error);
       Alert.alert('Hata', error.message || 'Giriş yapılırken bir hata oluştu');
     } finally {
       setIsLoading(false);
@@ -126,7 +127,6 @@ const NewAuthScreen = () => {
       });
       // Register successful - AuthContext will automatically navigate to the main page
     } catch (error: any) {
-      console.error('Register error:', error);
       Alert.alert('Hata', error.message || 'Kayıt olurken bir hata oluştu');
     } finally {
       setIsLoading(false);
@@ -151,44 +151,35 @@ const NewAuthScreen = () => {
     try {
       const response = await authAPI.forgotPassword(forgotPasswordEmail);
       
-      // 2026 Modern Approach: Token always returned (if user exists)
-      if (response && response.token) {
-        setResetToken(response.token);
+      if (response && response.code) {
+        const codeValue = String(response.code).trim();
+        setResetCode(codeValue);
+        setResetCodeInput('');
+        setCodeVerified(false);
         setEmailSent(true);
         
-        // Show success message with token info
         Alert.alert(
-          'Token Oluşturuldu',
-          `Şifre sıfırlama token'ı oluşturuldu. Token ${response.expiresIn || 10} dakika geçerlidir.\n\nToken aşağıda gösterilecektir.`,
+          'Kod Gönderildi',
+          '4 haneli doğrulama kodu e-posta adresinize gönderildi. Lütfen e-postanızı kontrol edin.',
           [{ text: 'Tamam' }]
         );
       } else if (response && response.userExists === false) {
-        // User doesn't exist (security: generic message)
         Alert.alert(
           'Bilgi',
           'Eğer bu e-posta adresi kayıtlıysa, şifre sıfırlama talimatları gönderilmiştir.',
           [{ text: 'Tamam' }]
         );
       } else {
-        // Unexpected response
         Alert.alert(
-          'Bilgi',
-          response?.message || 'İşlem tamamlandı. Lütfen e-postanızı kontrol edin.',
+          'Hata',
+          response?.message || 'Şifre sıfırlama kodu oluşturulamadı. Lütfen tekrar deneyin.',
           [{ text: 'Tamam' }]
         );
       }
     } catch (error: any) {
-      console.error('Forgot password error:', error);
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response,
-        stack: error.stack
-      });
       
-      // Backend'den gelen hata mesajını göster
       const errorMessage = error.message || 'Şifre sıfırlama isteği gönderilemedi';
       
-      // Rate limiting hatası için özel mesaj
       if (errorMessage.includes('çok fazla') || errorMessage.includes('rate limit')) {
         Alert.alert(
           'Çok Fazla İstek',
@@ -198,6 +189,37 @@ const NewAuthScreen = () => {
       } else {
         Alert.alert('Hata', errorMessage);
       }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    // Kod sadece rakam olmalı ve 4 haneli olmalı
+    if (!resetCodeInput || resetCodeInput.length !== 4) {
+      Alert.alert('Hata', 'Lütfen 4 haneli kodu girin');
+      return;
+    }
+    
+    // Sadece rakam kontrolü
+    if (!/^\d{4}$/.test(resetCodeInput)) {
+      Alert.alert('Hata', 'Kod sadece rakamlardan oluşmalıdır');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await authAPI.verifyResetCode(forgotPasswordEmail, resetCodeInput);
+      
+      if (response && response.token) {
+        setResetToken(response.token);
+        setCodeVerified(true);
+        Alert.alert('Başarılı', 'Kod doğrulandı. Yeni şifrenizi belirleyebilirsiniz.', [{ text: 'Tamam' }]);
+      } else {
+        Alert.alert('Hata', 'Kod doğrulama başarısız. Lütfen tekrar deneyin.');
+      }
+    } catch (error: any) {
+      Alert.alert('Hata', error.message || 'Kod doğrulama başarısız. Lütfen tekrar deneyin.');
     } finally {
       setIsLoading(false);
     }
@@ -243,10 +265,14 @@ const NewAuthScreen = () => {
               // Reset form and go back to login
               setShowForgotPassword(false);
               setEmailSent(false);
+              setCodeVerified(false);
+              setResetCode('');
+              setResetCodeInput('');
               setResetToken('');
               setNewPassword('');
               setConfirmNewPassword('');
               setForgotPasswordEmail('');
+              setIsLogin(true); // Login ekranına geri dön
               setIsLogin(true);
             }
           }
@@ -361,11 +387,8 @@ const NewAuthScreen = () => {
               <TouchableOpacity
                 style={styles.forgotPasswordButton}
                 onPress={() => {
-                  console.log('🔓 Şifremi Unuttum butonuna tıklandı');
-                  console.log('Current state - isLogin:', isLogin, 'showForgotPassword:', showForgotPassword);
                   setShowForgotPassword(true);
-                  setIsLogin(false); // Formu göstermek için isLogin'i false yap
-                  console.log('State updated - showForgotPassword: true, isLogin: false');
+                  setIsLogin(false);
                 }}
                 activeOpacity={0.7}
               >
@@ -383,6 +406,9 @@ const NewAuthScreen = () => {
                     setShowForgotPassword(false);
                     setIsLogin(true); // Login formuna geri dön
                     setEmailSent(false);
+                    setCodeVerified(false);
+                    setResetCode('');
+                    setResetCodeInput('');
                     setResetToken('');
                     setNewPassword('');
                     setConfirmNewPassword('');
@@ -397,10 +423,9 @@ const NewAuthScreen = () => {
               <Text style={styles.sectionTitle}>Şifre Sıfırlama</Text>
 
               {!emailSent ? (
-                // E-posta gönderme adımı
                 <>
                   <Text style={styles.descriptionText}>
-                    E-posta adresinize şifre sıfırlama bağlantısı göndereceğiz.
+                    E-posta adresinize 4 haneli şifre sıfırlama kodu göndereceğiz.
                   </Text>
                   
                   <View style={styles.inputContainer}>
@@ -428,126 +453,141 @@ const NewAuthScreen = () => {
                     )}
                   </TouchableOpacity>
                 </>
-              ) : (
-                // Token ve yeni şifre adımı
+              ) : !codeVerified ? (
+                /* AKIŞ ADIM 3-4: 4 haneli kod girişi ekranı */
                 <>
-                  <Text style={styles.descriptionText}>
-                    {resetToken 
-                      ? 'Aşağıdaki güvenli token\'ı kopyalayıp token alanına yapıştırın ve yeni şifrenizi girin. Token 10 dakika geçerlidir.'
-                      : 'E-postanıza gönderilen token\'ı ve yeni şifrenizi girin.'}
-                  </Text>
-                  
-                  {resetToken && (
-                    <View style={styles.securityInfo}>
-                      <Ionicons name="shield-checkmark-outline" size={16} color="#34C759" />
-                      <Text style={styles.securityInfoText}>
-                        2026 Güvenlik Standardı: Token şifreli olarak oluşturuldu ve 10 dakika geçerlidir.
-                      </Text>
-                    </View>
-                  )}
-                  
-                  {/* Token Gösterimi - Güvenli */}
-                  {resetToken && (
-                    <View style={styles.tokenContainer}>
-                      <Text style={styles.tokenLabel}>Sıfırlama Token'ı:</Text>
-                      <View style={styles.tokenDisplayContainer}>
-                        <TextInput
-                          style={styles.tokenDisplay}
-                          value={showToken ? resetToken : '•'.repeat(resetToken.length)}
-                          editable={false}
-                          secureTextEntry={!showToken}
-                        />
-                        <TouchableOpacity
-                          style={styles.tokenToggleButton}
-                          onPress={() => setShowToken(!showToken)}
-                        >
-                          <Ionicons 
-                            name={showToken ? "eye-off-outline" : "eye-outline"} 
-                            size={20} 
-                            color="#34C759" 
-                          />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={styles.tokenCopyButton}
-                          onPress={() => {
-                            Clipboard.setString(resetToken);
-                            Alert.alert('Başarılı', 'Token kopyalandı! Token alanına yapıştırabilirsiniz.');
-                          }}
-                        >
-                          <Ionicons name="copy-outline" size={20} color="#34C759" />
-                        </TouchableOpacity>
-                      </View>
-                      <Text style={styles.tokenWarning}>
-                        ⚠️ Bu token'ı kimseyle paylaşmayın. 10 dakika içinde geçerlidir.
-                      </Text>
-                    </View>
-                  )}
+                  <View style={styles.infoContainer}>
+                    <Ionicons name="mail" size={48} color="#34C759" />
+                    <Text style={styles.infoTitle}>Kod E-postanıza Gönderildi</Text>
+                    <Text style={styles.infoText}>
+                      E-posta adresinize gönderilen 4 haneli doğrulama kodunu girin.
+                    </Text>
+                    <Text style={styles.infoSubtext}>
+                      E-postanızı kontrol edin ve spam klasörünü de kontrol etmeyi unutmayın.
+                    </Text>
+                  </View>
                   
                   <View style={styles.inputContainer}>
-                    <Ionicons name="key-outline" size={20} color="#666" style={styles.inputIcon} />
+                    <Ionicons name="keypad-outline" size={20} color="#666" style={styles.inputIcon} />
                     <TextInput
                       style={styles.input}
-                      placeholder="Token'ı buraya yapıştırın"
+                      placeholder="4 haneli kodu girin"
                       placeholderTextColor="#999"
-                      value={resetToken}
-                      onChangeText={setResetToken}
+                      value={resetCodeInput}
+                      onChangeText={(text) => {
+                        // Sadece rakam ve max 4 karakter
+                        const numericValue = text.replace(/[^0-9]/g, '').slice(0, 4);
+                        setResetCodeInput(numericValue);
+                      }}
+                      keyboardType="number-pad"
+                      maxLength={4}
                       autoCapitalize="none"
                     />
                   </View>
 
-                  <View style={styles.inputContainer}>
-                    <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Yeni Şifre"
-                      placeholderTextColor="#999"
-                      value={newPassword}
-                      onChangeText={setNewPassword}
-                      secureTextEntry={!showPassword}
-                    />
-                    <TouchableOpacity
-                      style={styles.eyeIcon}
-                      onPress={() => setShowPassword(!showPassword)}
-                    >
-                      <Ionicons
-                        name={showPassword ? "eye-off-outline" : "eye-outline"}
-                        size={20}
-                        color="#666"
-                      />
-                    </TouchableOpacity>
-                  </View>
-
-                  <View style={styles.inputContainer}>
-                    <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Yeni Şifre Tekrar"
-                      placeholderTextColor="#999"
-                      value={confirmNewPassword}
-                      onChangeText={setConfirmNewPassword}
-                      secureTextEntry={!showConfirmPassword}
-                    />
-                    <TouchableOpacity
-                      style={styles.eyeIcon}
-                      onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                    >
-                      <Ionicons
-                        name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
-                        size={20}
-                        color="#666"
-                      />
-                    </TouchableOpacity>
-                  </View>
-
                   <TouchableOpacity
-                    style={[styles.submitButton, isLoading && styles.disabledButton]}
-                    onPress={handleResetPassword}
-                    disabled={isLoading}
+                    style={[styles.submitButton, (isLoading || resetCodeInput.length !== 4) && styles.disabledButton]}
+                    onPress={handleVerifyCode}
+                    disabled={isLoading || resetCodeInput.length !== 4}
                   >
                     {isLoading ? (
                       <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
-                      <Text style={styles.buttonText}>Şifreyi Sıfırla</Text>
+                      <Text style={styles.buttonText}>Kodu Doğrula</Text>
+                    )}
+                  </TouchableOpacity>
+                </>
+              ) : (
+                /* AKIŞ ADIM 5: Şifre sıfırlama ekranı (kod doğrulandıktan sonra) - Modern Tasarım */
+                <>
+                  <View style={styles.successHeader}>
+                    <View style={styles.successIconContainer}>
+                      <Ionicons name="checkmark-circle" size={48} color="#34C759" />
+                    </View>
+                    <Text style={styles.successTitle}>Kod Doğrulandı</Text>
+                    <Text style={styles.successSubtitle}>Yeni şifrenizi belirleyin</Text>
+                  </View>
+
+                  <View style={styles.modernSecurityInfo}>
+                    <Ionicons name="shield-checkmark" size={18} color="#34C759" />
+                    <Text style={styles.modernSecurityText}>
+                      Güvenlik: En az 8 karakter, büyük/küçük harf ve rakam
+                    </Text>
+                  </View>
+
+                  <View style={styles.modernInputWrapper}>
+                    <Text style={styles.inputLabel}>Yeni Şifre</Text>
+                    <View style={styles.modernInputContainer}>
+                      <Ionicons name="lock-closed" size={22} color="#34C759" style={styles.modernInputIcon} />
+                      <TextInput
+                        style={styles.modernInput}
+                        placeholder="Şifrenizi girin"
+                        placeholderTextColor="#BDBDBD"
+                        value={newPassword}
+                        onChangeText={setNewPassword}
+                        secureTextEntry={!showPassword}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        editable={true}
+                        keyboardType="default"
+                      />
+                      <TouchableOpacity
+                        style={styles.modernEyeIcon}
+                        onPress={() => setShowPassword(!showPassword)}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons
+                          name={showPassword ? "eye-off" : "eye"}
+                          size={22}
+                          color="#666"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.modernInputWrapper}>
+                    <Text style={styles.inputLabel}>Şifre Tekrar</Text>
+                    <View style={styles.modernInputContainer}>
+                      <Ionicons name="lock-closed" size={22} color="#34C759" style={styles.modernInputIcon} />
+                      <TextInput
+                        style={styles.modernInput}
+                        placeholder="Şifrenizi tekrar girin"
+                        placeholderTextColor="#BDBDBD"
+                        value={confirmNewPassword}
+                        onChangeText={setConfirmNewPassword}
+                        secureTextEntry={!showConfirmPassword}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        editable={true}
+                        keyboardType="default"
+                      />
+                      <TouchableOpacity
+                        style={styles.modernEyeIcon}
+                        onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons
+                          name={showConfirmPassword ? "eye-off" : "eye"}
+                          size={22}
+                          color="#666"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <TouchableOpacity
+                    style={[styles.modernSubmitButton, isLoading && styles.modernDisabledButton]}
+                    onPress={handleResetPassword}
+                    disabled={isLoading}
+                    activeOpacity={0.8}
+                  >
+                    {isLoading ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <>
+                        <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+                        <Text style={styles.modernButtonText}>Şifreyi Sıfırla</Text>
+                      </>
                     )}
                   </TouchableOpacity>
                 </>
@@ -905,6 +945,184 @@ const styles = StyleSheet.create({
     color: '#2E7D32',
     marginLeft: 8,
     flex: 1,
+  },
+  codeContainer: {
+    marginBottom: 20,
+    padding: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  codeLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  codeDisplayContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    justifyContent: 'center',
+  },
+  codeDisplay: {
+    fontSize: 24,
+    fontFamily: 'monospace',
+    color: '#34C759',
+    fontWeight: 'bold',
+    letterSpacing: 8,
+    marginRight: 12,
+  },
+  codeCopyButton: {
+    padding: 8,
+  },
+  codeWarning: {
+    fontSize: 12,
+    color: '#FF9800',
+    marginTop: 8,
+    fontStyle: 'italic',
+    textAlign: 'center',
+  },
+  infoContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+    padding: 20,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  infoTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1B5E20',
+    marginTop: 16,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  infoText: {
+    fontSize: 15,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 8,
+  },
+  infoSubtext: {
+    fontSize: 13,
+    color: '#999',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginTop: 8,
+  },
+  // Modern Password Reset Styles
+  successHeader: {
+    alignItems: 'center',
+    marginBottom: 32,
+    marginTop: 10,
+  },
+  successIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#E8F5E9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1B5E20',
+    marginBottom: 8,
+  },
+  successSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  },
+  modernSecurityInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E9',
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 24,
+    borderLeftWidth: 4,
+    borderLeftColor: '#34C759',
+  },
+  modernSecurityText: {
+    fontSize: 13,
+    color: '#2E7D32',
+    marginLeft: 10,
+    flex: 1,
+    lineHeight: 18,
+  },
+  modernInputWrapper: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  modernInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  modernInputIcon: {
+    marginRight: 12,
+  },
+  modernInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+    padding: 0,
+  },
+  modernEyeIcon: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  modernSubmitButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#34C759',
+    paddingVertical: 18,
+    borderRadius: 14,
+    marginTop: 8,
+    shadowColor: '#34C759',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  modernDisabledButton: {
+    backgroundColor: '#BDBDBD',
+    shadowOpacity: 0,
+  },
+  modernButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
   },
   backButtonContainer: {
     marginBottom: 20,

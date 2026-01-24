@@ -9,6 +9,7 @@ import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/LoginPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import MarketReportsPage from './pages/MarketReportsPage';
 import MarketReportDetailPage from './pages/MarketReportDetailPage';
 import FavoritesPage from './pages/FavoritesPage';
@@ -41,6 +42,7 @@ function App() {
         >
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/" element={<LandingPage />} />
             <Route path="/app" element={<Layout />}>
               <Route index element={<HomePage />} />

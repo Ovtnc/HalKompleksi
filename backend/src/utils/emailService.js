@@ -36,8 +36,8 @@ const createTransporter = () => {
   }
 };
 
-// Şifre sıfırlama emaili gönder
-const sendPasswordResetEmail = async (email, resetToken) => {
+// Şifre sıfırlama emaili gönder (4 haneli kod ile)
+const sendPasswordResetEmail = async (email, resetCode) => {
   try {
     const transporter = createTransporter();
     
@@ -47,7 +47,8 @@ const sendPasswordResetEmail = async (email, resetToken) => {
       return { success: false, error: 'Email servisi yapılandırılmamış' };
     }
     
-    const resetUrl = `${FRONTEND_URL}/reset-password?token=${resetToken}`;
+    // Web uygulaması için reset URL (kod parametresi ile)
+    const resetUrl = `${FRONTEND_URL}/reset-password?code=${resetCode}`;
     
     const mailOptions = {
       from: process.env.EMAIL_USER || 'your-email@gmail.com',
@@ -63,10 +64,27 @@ const sendPasswordResetEmail = async (email, resetToken) => {
           <div style="padding: 30px; background: #f9f9f9;">
             <h2 style="color: #2E7D32; margin-top: 0;">Şifre Sıfırlama İsteği</h2>
             
-            <p style="color: #333; font-size: 16px; line-height: 1.6;">
+            <p style="color: #333; font-size: 16px; line-height: 1.8;">
               Merhaba,<br><br>
-              Hesabınız için şifre sıfırlama talebinde bulundunuz. Aşağıdaki butona tıklayarak yeni şifrenizi belirleyebilirsiniz.
+              Hesabınız için şifre sıfırlama talebinde bulundunuz. Aşağıdaki <strong>4 haneli doğrulama kodunu</strong> kullanarak yeni şifrenizi belirleyebilirsiniz.
             </p>
+            
+            <div style="background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); padding: 30px; border-radius: 12px; margin: 30px 0; border: 2px solid #34C759; text-align: center;">
+              <p style="color: #1B5E20; font-size: 16px; margin: 0 0 15px 0; font-weight: 600;">
+                🔐 4 Haneli Doğrulama Kodunuz
+              </p>
+              <div style="background: #FFFFFF; padding: 20px; border-radius: 10px; display: inline-block; margin: 10px 0; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                <p style="color: #34C759; font-size: 36px; margin: 0; font-family: 'Courier New', monospace; font-weight: bold; letter-spacing: 12px; text-align: center;">
+                  ${resetCode}
+                </p>
+              </div>
+              <p style="color: #2E7D32; font-size: 14px; margin: 15px 0 0 0; font-weight: 500;">
+                Bu kodu mobil uygulamadaki şifre sıfırlama ekranına girin
+              </p>
+              <p style="color: #FF9800; font-size: 12px; margin: 10px 0 0 0; font-weight: 600;">
+                ⚠️ Kod 10 dakika geçerlidir
+              </p>
+            </div>
             
             <div style="text-align: center; margin: 30px 0;">
               <a href="${resetUrl}" 
@@ -78,29 +96,26 @@ const sendPasswordResetEmail = async (email, resetToken) => {
                         font-weight: bold; 
                         display: inline-block;
                         font-size: 16px;">
-                Şifremi Sıfırla
+                Web'de Şifremi Sıfırla
               </a>
             </div>
             
-            <p style="color: #666; font-size: 14px; line-height: 1.6;">
-              <strong>Önemli:</strong> Bu bağlantı 10 dakika geçerlidir. Eğer şifre sıfırlama talebinde bulunmadıysanız, bu e-postayı görmezden gelebilirsiniz.
-            </p>
-            
-            <div style="background: #FFF3CD; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #FFC107;">
-              <p style="color: #856404; font-size: 14px; margin: 0 0 10px 0; font-weight: bold;">
-                📱 Mobil Uygulama Kullanıcıları İçin:
+            <div style="background: #F5F5F5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p style="color: #666; font-size: 13px; margin: 0 0 8px 0; font-weight: 600;">
+                📱 Mobil Uygulama Kullanıcıları:
               </p>
-              <p style="color: #856404; font-size: 13px; margin: 0; font-family: monospace; word-break: break-all;">
-                Token: <strong>${resetToken}</strong>
-              </p>
-              <p style="color: #856404; font-size: 12px; margin: 10px 0 0 0;">
-                Bu token'ı mobil uygulamadaki şifre sıfırlama ekranına girin.
+              <p style="color: #333; font-size: 13px; margin: 0; line-height: 1.6;">
+                Yukarıdaki 4 haneli kodu mobil uygulamadaki şifre sıfırlama ekranına girin. Kod doğrulandıktan sonra yeni şifrenizi belirleyebilirsiniz.
               </p>
             </div>
             
-            <p style="color: #666; font-size: 14px; line-height: 1.6;">
+            <p style="color: #666; font-size: 13px; line-height: 1.6; margin-top: 20px;">
+              <strong>Güvenlik Uyarısı:</strong> Eğer şifre sıfırlama talebinde bulunmadıysanız, bu e-postayı görmezden gelebilirsiniz. Kodunuzu kimseyle paylaşmayın.
+            </p>
+            
+            <p style="color: #999; font-size: 12px; line-height: 1.6; margin-top: 15px;">
               Eğer buton çalışmıyorsa, aşağıdaki bağlantıyı tarayıcınıza kopyalayın:<br>
-              <a href="${resetUrl}" style="color: #27AE60; word-break: break-all;">${resetUrl}</a>
+              <a href="${resetUrl}" style="color: #27AE60; word-break: break-all; font-size: 11px;">${resetUrl}</a>
             </p>
           </div>
           

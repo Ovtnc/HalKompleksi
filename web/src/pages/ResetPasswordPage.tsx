@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { IoLockClosed, IoEye, IoEyeOff, IoCheckmarkCircle, IoMail } from 'react-icons/io5';
 

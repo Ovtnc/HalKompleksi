@@ -286,7 +286,7 @@ router.get('/categories', (req, res) => {
   const categories = [
     { id: 'meyve', name: 'Meyve', icon: 'leaf', color: '#2ECC71' },
     { id: 'sebze', name: 'Sebze', icon: 'nutrition', color: '#27AE60' },
-    { id: 'gida', name: 'Gıda', icon: 'basket', color: '#E67E22' },
+    { id: 'gida', name: 'Gıda', icon: 'restaurant', color: '#E67E22' },
     { id: 'nakliye', name: 'Nakliye', icon: 'car', color: '#3498DB' },
     { id: 'kasa', name: 'Kasa', icon: 'cube', color: '#9B59B6' },
     { id: 'zirai_ilac', name: 'Zirai İlaç', icon: 'medical', color: '#E74C3C' },

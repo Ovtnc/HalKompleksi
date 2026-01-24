@@ -24,6 +24,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { ENV } from '../../config/env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { locationsAPI } from '../../services/api';
+import { normalizeCities, getFallbackCities, type NormalizedCity } from '../../utils/cityHelpers';
 
 // API Base URL - Use from env config
 const API_BASE_URL = ENV.API_BASE_URL;
@@ -209,7 +210,7 @@ const AddProductScreen = ({ navigation }: any) => {
   const [currentDateField, setCurrentDateField] = useState<string>('');
 
   // API state
-  const [cities, setCities] = useState<any[]>([]);
+  const [cities, setCities] = useState<NormalizedCity[]>([]);
   const [districts, setDistricts] = useState<any[]>([]);
   const [loadingCities, setLoadingCities] = useState(false);
   const [loadingDistricts, setLoadingDistricts] = useState(false);
@@ -334,24 +335,21 @@ const AddProductScreen = ({ navigation }: any) => {
       const data = await response.json();
       console.log('✅ Cities data received, count:', Array.isArray(data) ? data.length : 0);
       
-      // Normalize possible shapes
-      const arr = Array.isArray(data) ? data : (data?.cities || []);
-      const normalized = arr.map((c: any) => ({
-        _id: c._id || c.id || c.code || c.name,
-        name: c.name || String(c),
-        code: c.code,
-      }));
+      // Use city helper to normalize data
+      const normalized = normalizeCities(data);
       
       if (normalized.length === 0) {
         console.warn('⚠️ No cities from API, using fallback');
-        setCities(CITY_FALLBACK.map((n, i) => ({ _id: String(i), name: n })));
+        const fallback = getFallbackCities();
+        setCities(fallback);
       } else {
         setCities(normalized);
       }
     } catch (error) {
       console.error('❌ Error loading cities:', error);
-      // Fall back to static list to keep UI usable
-      setCities(CITY_FALLBACK.map((n, i) => ({ _id: String(i), name: n })));
+      // Use fallback cities from helper
+      const fallback = getFallbackCities();
+      setCities(fallback);
     } finally {
       setLoadingCities(false);
     }

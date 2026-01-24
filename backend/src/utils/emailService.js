@@ -3,19 +3,49 @@ const { FRONTEND_URL } = require('../config/urls');
 
 // Email transporter oluştur
 const createTransporter = () => {
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER || 'your-email@gmail.com',
-      pass: process.env.EMAIL_PASS || 'your-app-password'
-    }
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS;
+  
+  console.log('📧 Email configuration check:', {
+    hasEmailUser: !!emailUser,
+    emailUserLength: emailUser ? emailUser.length : 0,
+    hasEmailPass: !!emailPass,
+    emailPassLength: emailPass ? emailPass.length : 0
   });
+  
+  // Email yapılandırması kontrolü
+  if (!emailUser || !emailPass || emailUser === 'your-email@gmail.com' || emailPass === 'your-app-password-here') {
+    console.warn('⚠️  Email servisi yapılandırılmamış! EMAIL_USER ve EMAIL_PASS environment variable\'larını ayarlayın.');
+    return null;
+  }
+  
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: emailUser,
+        pass: emailPass
+      }
+    });
+    
+    console.log('✅ Email transporter created successfully');
+    return transporter;
+  } catch (error) {
+    console.error('❌ Failed to create email transporter:', error);
+    return null;
+  }
 };
 
 // Şifre sıfırlama emaili gönder
 const sendPasswordResetEmail = async (email, resetToken) => {
   try {
     const transporter = createTransporter();
+    
+    // Email servisi yapılandırılmamışsa
+    if (!transporter) {
+      console.warn('Email servisi yapılandırılmamış, email gönderilemedi.');
+      return { success: false, error: 'Email servisi yapılandırılmamış' };
+    }
     
     const resetUrl = `${FRONTEND_URL}/reset-password?token=${resetToken}`;
     
@@ -56,6 +86,18 @@ const sendPasswordResetEmail = async (email, resetToken) => {
               <strong>Önemli:</strong> Bu bağlantı 10 dakika geçerlidir. Eğer şifre sıfırlama talebinde bulunmadıysanız, bu e-postayı görmezden gelebilirsiniz.
             </p>
             
+            <div style="background: #FFF3CD; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #FFC107;">
+              <p style="color: #856404; font-size: 14px; margin: 0 0 10px 0; font-weight: bold;">
+                📱 Mobil Uygulama Kullanıcıları İçin:
+              </p>
+              <p style="color: #856404; font-size: 13px; margin: 0; font-family: monospace; word-break: break-all;">
+                Token: <strong>${resetToken}</strong>
+              </p>
+              <p style="color: #856404; font-size: 12px; margin: 10px 0 0 0;">
+                Bu token'ı mobil uygulamadaki şifre sıfırlama ekranına girin.
+              </p>
+            </div>
+            
             <p style="color: #666; font-size: 14px; line-height: 1.6;">
               Eğer buton çalışmıyorsa, aşağıdaki bağlantıyı tarayıcınıza kopyalayın:<br>
               <a href="${resetUrl}" style="color: #27AE60; word-break: break-all;">${resetUrl}</a>
@@ -72,12 +114,19 @@ const sendPasswordResetEmail = async (email, resetToken) => {
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log('Password reset email sent:', result.messageId);
+    console.log('✅ Password reset email sent successfully:', result.messageId);
     return { success: true, messageId: result.messageId };
     
   } catch (error) {
-    console.error('Email sending error:', error);
-    return { success: false, error: error.message };
+    console.error('❌ Email sending error details:', {
+      message: error.message,
+      code: error.code,
+      command: error.command,
+      response: error.response,
+      responseCode: error.responseCode,
+      stack: error.stack
+    });
+    return { success: false, error: error.message || 'Email gönderilemedi' };
   }
 };
 
@@ -85,6 +134,18 @@ const sendPasswordResetEmail = async (email, resetToken) => {
 const sendWelcomeEmail = async (email, name) => {
   try {
     const transporter = createTransporter();
+    
+    // Email servisi yapılandırılmamışsa
+    if (!transporter) {
+      console.warn('Email servisi yapılandırılmamış, email gönderilemedi.');
+      return { success: false, error: 'Email servisi yapılandırılmamış' };
+    }
+    
+    // Email servisi yapılandırılmamışsa
+    if (!transporter) {
+      console.warn('Email servisi yapılandırılmamış, email gönderilemedi.');
+      return { success: false, error: 'Email servisi yapılandırılmamış' };
+    }
     
     const mailOptions = {
       from: process.env.EMAIL_USER || 'your-email@gmail.com',

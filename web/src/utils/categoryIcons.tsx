@@ -39,44 +39,57 @@ export const getCategoryIcon = (iconName?: string, size: number = 24) => {
     .replace(/\s+/g, '-')
     .replace(/_/g, '-');
   
-  // Icon mapping - mobil uygulamadaki icon mapping ile aynı
-  // Mobil uygulamada Ionicons kullanılıyor, web'de react-icons/io5 kullanıyoruz
-  // Her ikisi de aynı icon setini kullanıyor (Ionicons)
+  // Icon mapping - Backend kategorilerine göre güncellendi
+  // Kategoriler: meyve, sebze, gıda, nakliye, kasa, zirai ilaç, ambalaj, indir-bindir, emlak, araç
   const iconMap: Record<string, React.ReactElement> = {
-    // Temel kategoriler (mobil uygulamadan)
-    'leaf': <IoLeafOutline size={size} />,
-    'nutrition': <IoNutritionOutline size={size} />,
+    // Ana kategoriler (backend'den gelen icon isimleri)
+    'leaf': <IoLeafOutline size={size} />, // Meyve
+    'nutrition': <IoNutritionOutline size={size} />, // Sebze
+    'basket': <IoRestaurantOutline size={size} />, // Gıda - restaurant icon daha uygun
+    'car': <IoCarOutline size={size} />, // Nakliye
+    'cube': <IoCubeOutline size={size} />, // Kasa
+    'medical': <IoMedicalOutline size={size} />, // Zirai İlaç
+    'archive': <IoArchiveOutline size={size} />, // Ambalaj
+    'people': <IoPeopleOutline size={size} />, // İndir-Bindir
+    'home': <IoHomeOutline size={size} />, // Emlak
+    'car-sport': <IoCarSportOutline size={size} />, // Araç
+    'carsport': <IoCarSportOutline size={size} />,
+    
+    // Kategori slug'ları için direkt mapping (backend'deki id'ler)
+    'meyve': <IoLeafOutline size={size} />,
+    'sebze': <IoNutritionOutline size={size} />,
+    'gida': <IoRestaurantOutline size={size} />,
+    'nakliye': <IoCarOutline size={size} />,
+    'kasa': <IoCubeOutline size={size} />,
+    'zirai-ilac': <IoMedicalOutline size={size} />,
+    'zirai_ilac': <IoMedicalOutline size={size} />,
+    'ambalaj': <IoArchiveOutline size={size} />,
+    'indir-bindir': <IoPeopleOutline size={size} />,
+    'indir_bindir': <IoPeopleOutline size={size} />,
+    'emlak': <IoHomeOutline size={size} />,
+    'arac': <IoCarSportOutline size={size} />,
+    
+    // Alternatif icon isimleri (geriye dönük uyumluluk)
     'restaurant': <IoRestaurantOutline size={size} />,
     'fast-food': <IoFastFoodOutline size={size} />,
     'fastfood': <IoFastFoodOutline size={size} />,
-    'basket': <IoCartOutline size={size} />,
     'cart': <IoCartOutline size={size} />,
-    'car': <IoCarOutline size={size} />,
-    'cube': <IoCubeOutline size={size} />,
-    'medical': <IoMedicalOutline size={size} />,
     'medkit': <IoMedkitOutline size={size} />,
-    'archive': <IoArchiveOutline size={size} />,
-    'people': <IoPeopleOutline size={size} />,
-    'home': <IoHomeOutline size={size} />,
-    'car-sport': <IoCarSportOutline size={size} />,
-    'carsport': <IoCarSportOutline size={size} />,
     
-    // Backend'den gelen yeni kategoriler - isimlere uygun iconlar
-    'grain': <IoNutritionOutline size={size} />, // Tahıl - beslenme/nutrition iconu uygun
-    'seedling': <IoLeafOutline size={size} />, // Bakliyat - yaprak iconu uygun (tohum/filiz)
-    'tree': <IoNutritionOutline size={size} />, // Kuruyemiş - beslenme iconu daha uygun (besin değeri yüksek)
-    'droplet': <IoFlowerOutline size={size} />, // Zeytin - çiçek iconu uygun (zeytin ağacı çiçeği)
-    'heart': <IoHeartOutline size={size} />, // Organik - kalp iconu uygun (sağlıklı/organik)
-    
-    // Ek kategoriler (görüntüdeki kategorilere göre)
-    'flower': <IoFlowerOutline size={size} />, // Bal için
-    'egg': <IoEggOutline size={size} />, // Et & Süt için alternatif
+    // Eski kategoriler (geriye dönük uyumluluk)
+    'grain': <IoNutritionOutline size={size} />,
+    'seedling': <IoLeafOutline size={size} />,
+    'tree': <IoNutritionOutline size={size} />,
+    'droplet': <IoFlowerOutline size={size} />,
+    'heart': <IoHeartOutline size={size} />,
+    'flower': <IoFlowerOutline size={size} />,
+    'egg': <IoEggOutline size={size} />,
     'water': <IoWaterOutline size={size} />,
-    'flame': <IoFlameOutline size={size} />, // Baharat için
+    'flame': <IoFlameOutline size={size} />,
     'flask': <IoFlaskOutline size={size} />,
-    'paw': <IoPawOutline size={size} />, // Hayvancılık için
-    'construct': <IoConstructOutline size={size} />, // Hizmet, İndir-Bindir için
-    'ellipse': <IoEllipseOutline size={size} />, // Diğer için
+    'paw': <IoPawOutline size={size} />,
+    'construct': <IoConstructOutline size={size} />,
+    'ellipse': <IoEllipseOutline size={size} />,
     
     // Default
     'default': <IoGridOutline size={size} />,
@@ -100,7 +113,7 @@ export const CategoryIcon: React.FC<{ iconName?: string; size?: number; classNam
   className = ''
 }) => {
   try {
-    const icon = getCategoryIcon(iconName, size);
+  const icon = getCategoryIcon(iconName, size);
     return (
       <span className={`inline-flex items-center justify-center text-primary ${className}`}>
         {icon}

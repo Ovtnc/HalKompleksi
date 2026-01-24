@@ -14,6 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../services/AuthContext';
+import { authAPI } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginScreen = ({ navigation }: any) => {
@@ -21,6 +22,15 @@ const LoginScreen = ({ navigation }: any) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
+  const [isLoadingForgotPassword, setIsLoadingForgotPassword] = useState(false);
   const { login, isLoading } = useAuth();
 
   useEffect(() => {
@@ -69,6 +79,73 @@ const LoginScreen = ({ navigation }: any) => {
     } catch (error) {
       console.error('Login error:', error);
       Alert.alert('Hata', (error as Error).message || 'Giriş yapılırken bir hata oluştu');
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!forgotPasswordEmail || !forgotPasswordEmail.includes('@')) {
+      Alert.alert('Hata', 'Lütfen geçerli bir e-posta adresi girin');
+      return;
+    }
+
+    setIsLoadingForgotPassword(true);
+    try {
+      await authAPI.forgotPassword(forgotPasswordEmail);
+      setEmailSent(true);
+      Alert.alert(
+        'Başarılı',
+        'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Lütfen e-postanızı kontrol edin ve token\'ı girin.',
+        [{ text: 'Tamam' }]
+      );
+    } catch (error: any) {
+      console.error('Forgot password error:', error);
+      Alert.alert('Hata', error.message || 'Şifre sıfırlama isteği gönderilemedi');
+    } finally {
+      setIsLoadingForgotPassword(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetToken || !newPassword || !confirmNewPassword) {
+      Alert.alert('Hata', 'Lütfen tüm alanları doldurun');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      Alert.alert('Hata', 'Şifre en az 6 karakter olmalıdır');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      Alert.alert('Hata', 'Şifreler eşleşmiyor');
+      return;
+    }
+
+    setIsLoadingForgotPassword(true);
+    try {
+      await authAPI.resetPassword(resetToken, newPassword);
+      Alert.alert(
+        'Başarılı',
+        'Şifreniz başarıyla sıfırlandı. Yeni şifrenizle giriş yapabilirsiniz.',
+        [
+          {
+            text: 'Tamam',
+            onPress: () => {
+              setShowForgotPassword(false);
+              setEmailSent(false);
+              setResetToken('');
+              setNewPassword('');
+              setConfirmNewPassword('');
+              setForgotPasswordEmail('');
+            }
+          }
+        ]
+      );
+    } catch (error: any) {
+      console.error('Reset password error:', error);
+      Alert.alert('Hata', error.message || 'Şifre sıfırlama başarısız');
+    } finally {
+      setIsLoadingForgotPassword(false);
     }
   };
 
@@ -154,15 +231,158 @@ const LoginScreen = ({ navigation }: any) => {
                 )}
               </TouchableOpacity>
 
-
+              {/* Şifremi Unuttum Butonu - Her zaman görünür */}
               <TouchableOpacity
-                style={styles.registerButton}
-                onPress={() => navigation.navigate('Register')}
+                style={styles.forgotPasswordButton}
+                onPress={() => {
+                  console.log('🔓 Şifremi Unuttum butonuna tıklandı');
+                  setShowForgotPassword(true);
+                }}
+                activeOpacity={0.7}
               >
-                <Text style={styles.registerButtonText}>
-                  Hesabınız yok mu? Kayıt olun
-                </Text>
+                <Ionicons name="lock-open-outline" size={18} color="#27AE60" style={{ marginRight: 6 }} />
+                <Text style={styles.forgotPasswordButtonText}>Şifremi Unuttum</Text>
               </TouchableOpacity>
+
+              {/* Şifre Sıfırlama Formu */}
+              {showForgotPassword && (
+                <>
+                  <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => {
+                      setShowForgotPassword(false);
+                      setEmailSent(false);
+                      setResetToken('');
+                      setNewPassword('');
+                      setConfirmNewPassword('');
+                      setForgotPasswordEmail('');
+                    }}
+                  >
+                    <Ionicons name="arrow-back" size={20} color="#2E7D32" />
+                    <Text style={styles.backButtonText}>Geri</Text>
+                  </TouchableOpacity>
+
+                  <Text style={styles.forgotPasswordTitle}>Şifre Sıfırlama</Text>
+
+                  {!emailSent ? (
+                    <>
+                      <Text style={styles.forgotPasswordDescription}>
+                        E-posta adresinize şifre sıfırlama bağlantısı göndereceğiz.
+                      </Text>
+                      
+                      <View style={styles.inputContainer}>
+                        <Ionicons name="mail" size={20} color="#666" style={styles.inputIcon} />
+                        <TextInput
+                          style={styles.input}
+                          placeholder="E-posta adresiniz"
+                          placeholderTextColor="#999"
+                          value={forgotPasswordEmail}
+                          onChangeText={setForgotPasswordEmail}
+                          keyboardType="email-address"
+                          autoCapitalize="none"
+                        />
+                      </View>
+
+                      <TouchableOpacity
+                        style={[styles.loginButton, isLoadingForgotPassword && styles.disabledButton]}
+                        onPress={handleForgotPassword}
+                        disabled={isLoadingForgotPassword}
+                      >
+                        {isLoadingForgotPassword ? (
+                          <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                          <Text style={styles.loginButtonText}>Gönder</Text>
+                        )}
+                      </TouchableOpacity>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={styles.forgotPasswordDescription}>
+                        E-postanıza gönderilen token'ı ve yeni şifrenizi girin.
+                      </Text>
+                      
+                      <View style={styles.inputContainer}>
+                        <Ionicons name="key" size={20} color="#666" style={styles.inputIcon} />
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Token (e-postanızdan kopyalayın)"
+                          placeholderTextColor="#999"
+                          value={resetToken}
+                          onChangeText={setResetToken}
+                          autoCapitalize="none"
+                        />
+                      </View>
+
+                      <View style={styles.inputContainer}>
+                        <Ionicons name="lock-closed" size={20} color="#666" style={styles.inputIcon} />
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Yeni Şifre"
+                          placeholderTextColor="#999"
+                          value={newPassword}
+                          onChangeText={setNewPassword}
+                          secureTextEntry={!showNewPassword}
+                        />
+                        <TouchableOpacity
+                          onPress={() => setShowNewPassword(!showNewPassword)}
+                          style={styles.eyeIcon}
+                        >
+                          <Ionicons
+                            name={showNewPassword ? 'eye-off' : 'eye'}
+                            size={20}
+                            color="#666"
+                          />
+                        </TouchableOpacity>
+                      </View>
+
+                      <View style={styles.inputContainer}>
+                        <Ionicons name="lock-closed" size={20} color="#666" style={styles.inputIcon} />
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Yeni Şifre Tekrar"
+                          placeholderTextColor="#999"
+                          value={confirmNewPassword}
+                          onChangeText={setConfirmNewPassword}
+                          secureTextEntry={!showConfirmNewPassword}
+                        />
+                        <TouchableOpacity
+                          onPress={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                          style={styles.eyeIcon}
+                        >
+                          <Ionicons
+                            name={showConfirmNewPassword ? 'eye-off' : 'eye'}
+                            size={20}
+                            color="#666"
+                          />
+                        </TouchableOpacity>
+                      </View>
+
+                      <TouchableOpacity
+                        style={[styles.loginButton, isLoadingForgotPassword && styles.disabledButton]}
+                        onPress={handleResetPassword}
+                        disabled={isLoadingForgotPassword}
+                      >
+                        {isLoadingForgotPassword ? (
+                          <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                          <Text style={styles.loginButtonText}>Şifreyi Sıfırla</Text>
+                        )}
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </>
+              )}
+
+              {!showForgotPassword && (
+                <TouchableOpacity
+                  style={styles.registerButton}
+                  onPress={() => navigation.navigate('Register')}
+                >
+                  <Text style={styles.registerButtonText}>
+                    Hesabınız yok mu? Kayıt olun
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -282,13 +502,48 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   forgotPasswordButton: {
-    marginTop: 15,
+    marginTop: 18,
+    marginBottom: 5,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#E8F5E9',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#27AE60',
   },
   forgotPasswordButtonText: {
     color: '#27AE60',
     fontSize: 16,
+    fontWeight: '700',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingVertical: 8,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#2E7D32',
     fontWeight: '500',
+    marginLeft: 8,
+  },
+  forgotPasswordTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#2E7D32',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  forgotPasswordDescription: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 20,
   },
   registerButton: {
     marginTop: 10,

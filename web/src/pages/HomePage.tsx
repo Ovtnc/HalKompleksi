@@ -245,14 +245,14 @@ const HomePage = () => {
                     <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
-                    <input
-                      type="text"
+                <input
+                  type="text"
                       className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                       placeholder="Ürün, kategori veya satıcı ara..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                    />
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                />
                   </div>
                   <button
                     onClick={handleFilterClick}
@@ -272,8 +272,8 @@ const HomePage = () => {
                       </span>
                     )}
                   </button>
-                  <button
-                    onClick={handleSearch}
+                <button
+                  onClick={handleSearch}
                     className="px-6 md:px-8 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary-dark transition-colors flex items-center gap-2"
                   >
                     <span>Ara</span>
@@ -382,7 +382,7 @@ const HomePage = () => {
                         className="px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors"
                       >
                         Filtrele
-                      </button>
+                </button>
                     </div>
                   </div>
                 )}
@@ -431,17 +431,9 @@ const HomePage = () => {
           <section className="mb-12">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Kategoriler</h2>
-              {categories.length > 8 && (
-                <button
-                  onClick={() => navigate('/app/products')}
-                  className="text-primary hover:text-primary-dark font-medium text-sm md:text-base transition-colors"
-                >
-                  Tümünü Gör →
-                </button>
-              )}
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-3 md:gap-4">
-              {categories.slice(0, 8).map((category) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-10 gap-3 md:gap-4">
+              {categories.map((category) => (
                 <button
                   key={category._id}
                   onClick={() => handleCategoryClick(category)}

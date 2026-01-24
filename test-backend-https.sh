@@ -61,3 +61,15 @@ echo "   2. Nginx doğru yapılandırıldı mı kontrol edin"
 echo "   3. Firewall portları açık mı kontrol edin"
 echo ""
 
+
+
+
+
+
+
+
+
+
+
+
+

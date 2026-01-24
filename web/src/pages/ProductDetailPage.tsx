@@ -316,11 +316,11 @@ const ProductDetailPage = () => {
                       }`}
                     >
                       {imgUrl ? (
-                        <img
-                          src={imgUrl}
-                          alt={`${product.title} ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
+                      <img
+                        src={imgUrl}
+                        alt={`${product.title} ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gray-100 text-2xl">
                           📦
@@ -470,15 +470,16 @@ const ProductDetailPage = () => {
                 <div className="space-y-4">
                   <div className="flex items-center gap-4">
                     <div className="relative">
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-2xl shadow-lg">
-                        {product.seller.name.charAt(0).toUpperCase()}
-                      </div>
-                      {product.seller.profileImage && (
+                      {product.seller.profileImage ? (
                         <img 
                           src={product.seller.profileImage} 
                           alt={product.seller.name}
-                          className="w-16 h-16 rounded-2xl object-cover"
+                          className="w-16 h-16 rounded-2xl object-cover shadow-lg"
                         />
+                      ) : (
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-2xl shadow-lg">
+                          {product.seller.name.charAt(0).toUpperCase()}
+                        </div>
                       )}
                     </div>
                     <div className="flex-1">

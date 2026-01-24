@@ -19,6 +19,7 @@ import { Product } from '../../types';
 import { productsAPI, categoriesAPI, locationsAPI } from '../../services/api';
 import { ENV } from '../../config/env';
 import { useProductRefresh } from '../../hooks/useProductRefresh';
+import { normalizeCities, addAllCitiesOption, getFallbackCities, type NormalizedCity } from '../../utils/cityHelpers';
 
 const { width } = Dimensions.get('window');
 
@@ -34,7 +35,7 @@ const ProductsScreen = ({ navigation, route }: ProductsScreenProps) => {
   const [showFilters, setShowFilters] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [cities, setCities] = useState<any[]>([]);
+  const [cities, setCities] = useState<NormalizedCity[]>([]);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationSearchQuery, setLocationSearchQuery] = useState('');
   
@@ -92,10 +93,25 @@ const ProductsScreen = ({ navigation, route }: ProductsScreenProps) => {
         locationsAPI.getCities()
       ]);
       
+      // Handle different response formats
+      const citiesArray = Array.isArray(citiesResponse) 
+        ? citiesResponse  // Direct array from backend
+        : (citiesResponse?.cities || []);  // Wrapped in cities property
+      
+      // Normalize cities with helper
+      const normalized = normalizeCities(citiesArray);
+      
+      // Add "All Cities" option
+      const withAllOption = addAllCitiesOption(normalized);
+      
       setCategories(categoriesResponse.categories || []);
-      setCities(citiesResponse.cities || []);
+      setCities(withAllOption);
     } catch (error) {
       console.error('Error loading initial data:', error);
+      // Use fallback cities
+      const fallback = getFallbackCities();
+      const withAllOption = addAllCitiesOption(fallback);
+      setCities(withAllOption);
     }
   };
 
@@ -602,7 +618,7 @@ const ProductsScreen = ({ navigation, route }: ProductsScreenProps) => {
     if (!showLocationModal) return null;
 
     const filteredCities = cities.filter(city => 
-      city.name.toLowerCase().includes(locationSearchQuery.toLowerCase())
+      city.name && city.name.toLowerCase().includes(locationSearchQuery.toLowerCase())
     );
 
     return (
@@ -628,6 +644,13 @@ const ProductsScreen = ({ navigation, route }: ProductsScreenProps) => {
 
           <FlatList
             data={filteredCities}
+            ListEmptyComponent={() => (
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <Text style={{ fontSize: 16, color: '#666' }}>
+                  Şehir bulunamadı
+                </Text>
+              </View>
+            )}
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={styles.cityItem}
@@ -638,7 +661,7 @@ const ProductsScreen = ({ navigation, route }: ProductsScreenProps) => {
                 }}
               >
                 <Text style={styles.cityName}>{item.name}</Text>
-                <Text style={styles.cityCode}>{item.code}</Text>
+                {item.code && <Text style={styles.cityCode}>{item.code}</Text>}
               </TouchableOpacity>
             )}
             keyExtractor={(item) => item._id || item.id || item.code}

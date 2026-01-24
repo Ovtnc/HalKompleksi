@@ -20,9 +20,13 @@ const locationRoutes = require('./routes/locations');
 const notificationRoutes = require('./routes/notifications');
 const marketReportRoutes = require('./routes/marketReports');
 const categoryRoutes = require('./routes/categories');
+const testEmailRoutes = require('./routes/testEmail');
 
 const app = express();
 const PORT = urlConfig.PORT;
+
+// Trust proxy - Nginx reverse proxy için gerekli
+app.set('trust proxy', true);
 
 // Connect to MongoDB
 connectDB();
@@ -98,6 +102,10 @@ app.use(cors({
   origin: urlConfig.IS_DEVELOPMENT ? '*' : [
     urlConfig.FRONTEND_URL,
     urlConfig.WEB_URL,
+    'http://localhost:3000', // Vite web app (default)
+    'http://localhost:3001', // Vite web app (alternative)
+    'http://localhost:3002', // Vite web app (alternative)
+    'http://localhost:3003', // Vite web app (alternative)
     'http://localhost:8081', 
     'http://localhost:8088', 
     'http://192.168.0.27:8081', 
@@ -109,6 +117,8 @@ app.use(cors({
     'http://109.199.114.223:8081',
     'http://109.199.114.223:8088',
     'http://109.199.114.223:5001',
+    'https://halkompleksi.com', // Production web
+    'https://www.halkompleksi.com', // Production web (www)
     'exp://192.168.0.27:8081',
     'exp://192.168.1.109:8081',
     'exp://192.168.1.109:8082',
@@ -116,8 +126,19 @@ app.use(cors({
     'exp://109.199.114.223:8088'
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'Accept', 
+    'Origin', 
+    'X-Requested-With',
+    'Cache-Control',
+    'Pragma',
+    'Expires'
+  ],
+  exposedHeaders: ['Content-Length', 'Content-Type'],
+  maxAge: 86400 // 24 hours
 }));
 
 // Static dosya servisi - resimler için
@@ -156,6 +177,7 @@ app.use('/api/locations', locationRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/market-reports', marketReportRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/test', testEmailRoutes); // Test endpoint (development için)
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

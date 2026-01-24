@@ -13,12 +13,19 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
+import { authAPI } from '../../services/api';
 
 const NewAuthScreen = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
   // Login form state
   const [loginData, setLoginData] = useState({
@@ -78,8 +85,9 @@ const NewAuthScreen = () => {
   const handleRegister = async () => {
     const { name, email, phone, password, confirmPassword } = registerData;
 
-    if (!name || !email || !phone || !password || !confirmPassword) {
-      Alert.alert('Hata', 'Lütfen tüm alanları doldurun');
+    // Apple App Store Requirement: Phone number is optional, not required
+    if (!name || !email || !password || !confirmPassword) {
+      Alert.alert('Hata', 'Lütfen zorunlu alanları doldurun');
       return;
     }
 
@@ -98,8 +106,9 @@ const NewAuthScreen = () => {
       return;
     }
 
-    if (phone.length < 10) {
-      Alert.alert('Hata', 'Geçerli bir telefon numarası girin');
+    // Validate phone only if provided (optional field)
+    if (phone && phone.length < 10) {
+      Alert.alert('Hata', 'Geçerli bir telefon numarası girin (en az 10 haneli)');
       return;
     }
 
@@ -128,6 +137,102 @@ const NewAuthScreen = () => {
 
   const updateRegisterData = (field: string, value: string) => {
     setRegisterData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleForgotPassword = async () => {
+    if (!forgotPasswordEmail || !forgotPasswordEmail.includes('@')) {
+      Alert.alert('Hata', 'Lütfen geçerli bir e-posta adresi girin');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await authAPI.forgotPassword(forgotPasswordEmail);
+      setEmailSent(true);
+      
+      // Eğer backend'den token geldiyse, onu kullan
+      if (response.token) {
+        setResetToken(response.token);
+        if (response.warning) {
+          Alert.alert(
+            'Bilgi',
+            `E-posta gönderilemedi, ancak sıfırlama token'ı oluşturuldu.\n\nToken: ${response.token}\n\nLütfen bu token'ı kullanarak şifrenizi sıfırlayın.`,
+            [{ text: 'Tamam' }]
+          );
+        } else {
+          Alert.alert(
+            'Başarılı',
+            'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Lütfen e-postanızı kontrol edin ve token\'ı girin.',
+            [{ text: 'Tamam' }]
+          );
+        }
+      } else {
+        Alert.alert(
+          'Başarılı',
+          'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Lütfen e-postanızı kontrol edin ve token\'ı girin.',
+          [{ text: 'Tamam' }]
+        );
+      }
+    } catch (error: any) {
+      console.error('Forgot password error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response,
+        stack: error.stack
+      });
+      
+      // Backend'den gelen hata mesajını göster
+      const errorMessage = error.message || 'Şifre sıfırlama isteği gönderilemedi';
+      Alert.alert('Hata', errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetToken || !newPassword || !confirmNewPassword) {
+      Alert.alert('Hata', 'Lütfen tüm alanları doldurun');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      Alert.alert('Hata', 'Şifre en az 6 karakter olmalıdır');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      Alert.alert('Hata', 'Şifreler eşleşmiyor');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await authAPI.resetPassword(resetToken, newPassword);
+      Alert.alert(
+        'Başarılı',
+        'Şifreniz başarıyla sıfırlandı. Yeni şifrenizle giriş yapabilirsiniz.',
+        [
+          {
+            text: 'Tamam',
+            onPress: () => {
+              // Reset form and go back to login
+              setShowForgotPassword(false);
+              setEmailSent(false);
+              setResetToken('');
+              setNewPassword('');
+              setConfirmNewPassword('');
+              setForgotPasswordEmail('');
+              setIsLogin(true);
+            }
+          }
+        ]
+      );
+    } catch (error: any) {
+      console.error('Reset password error:', error);
+      Alert.alert('Hata', error.message || 'Şifre sıfırlama başarısız');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -226,6 +331,152 @@ const NewAuthScreen = () => {
                   <Text style={styles.buttonText}>Giriş Yap</Text>
                 )}
               </TouchableOpacity>
+
+              {/* Şifremi Unuttum Butonu - Giriş Yap butonunun altında - HER ZAMAN GÖRÜNÜR */}
+              <TouchableOpacity
+                style={styles.forgotPasswordButton}
+                onPress={() => {
+                  console.log('🔓 Şifremi Unuttum butonuna tıklandı');
+                  setShowForgotPassword(true);
+                  setIsLogin(false); // Formu göstermek için isLogin'i false yap
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="lock-open-outline" size={18} color="#34C759" style={{ marginRight: 6 }} />
+                <Text style={styles.forgotPasswordText}>Şifremi Unuttum</Text>
+              </TouchableOpacity>
+            </>
+          ) : showForgotPassword ? (
+            // Şifre Sıfırlama Formu
+            <>
+              <View style={styles.backButtonContainer}>
+                <TouchableOpacity
+                  style={styles.backButton}
+                  onPress={() => {
+                    setShowForgotPassword(false);
+                    setIsLogin(true); // Login formuna geri dön
+                    setEmailSent(false);
+                    setResetToken('');
+                    setNewPassword('');
+                    setConfirmNewPassword('');
+                    setForgotPasswordEmail('');
+                  }}
+                >
+                  <Ionicons name="arrow-back" size={24} color="#34C759" />
+                  <Text style={styles.backButtonText}>Geri</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.sectionTitle}>Şifre Sıfırlama</Text>
+
+              {!emailSent ? (
+                // E-posta gönderme adımı
+                <>
+                  <Text style={styles.descriptionText}>
+                    E-posta adresinize şifre sıfırlama bağlantısı göndereceğiz.
+                  </Text>
+                  
+                  <View style={styles.inputContainer}>
+                    <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="E-posta adresiniz"
+                      placeholderTextColor="#999"
+                      value={forgotPasswordEmail}
+                      onChangeText={setForgotPasswordEmail}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                    />
+                  </View>
+
+                  <TouchableOpacity
+                    style={[styles.submitButton, isLoading && styles.disabledButton]}
+                    onPress={handleForgotPassword}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.buttonText}>Gönder</Text>
+                    )}
+                  </TouchableOpacity>
+                </>
+              ) : (
+                // Token ve yeni şifre adımı
+                <>
+                  <Text style={styles.descriptionText}>
+                    E-postanıza gönderilen token'ı ve yeni şifrenizi girin.
+                  </Text>
+                  
+                  <View style={styles.inputContainer}>
+                    <Ionicons name="key-outline" size={20} color="#666" style={styles.inputIcon} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Token (e-postanızdan kopyalayın)"
+                      placeholderTextColor="#999"
+                      value={resetToken}
+                      onChangeText={setResetToken}
+                      autoCapitalize="none"
+                    />
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Yeni Şifre"
+                      placeholderTextColor="#999"
+                      value={newPassword}
+                      onChangeText={setNewPassword}
+                      secureTextEntry={!showPassword}
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeIcon}
+                      onPress={() => setShowPassword(!showPassword)}
+                    >
+                      <Ionicons
+                        name={showPassword ? "eye-off-outline" : "eye-outline"}
+                        size={20}
+                        color="#666"
+                      />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Yeni Şifre Tekrar"
+                      placeholderTextColor="#999"
+                      value={confirmNewPassword}
+                      onChangeText={setConfirmNewPassword}
+                      secureTextEntry={!showConfirmPassword}
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeIcon}
+                      onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      <Ionicons
+                        name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+                        size={20}
+                        color="#666"
+                      />
+                    </TouchableOpacity>
+                  </View>
+
+                  <TouchableOpacity
+                    style={[styles.submitButton, isLoading && styles.disabledButton]}
+                    onPress={handleResetPassword}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.buttonText}>Şifreyi Sıfırla</Text>
+                    )}
+                  </TouchableOpacity>
+                </>
+              )}
             </>
           ) : (
             // Register Form
@@ -260,7 +511,7 @@ const NewAuthScreen = () => {
                   <Ionicons name="call-outline" size={20} color="#666" style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
-                    placeholder="05XX XXX XX XX"
+                    placeholder="Telefon Numarası (Opsiyonel)"
                     placeholderTextColor="#999"
                     value={registerData.phone}
                     onChangeText={(text) => {
@@ -281,7 +532,7 @@ const NewAuthScreen = () => {
                   />
                 </View>
                 <Text style={styles.helperText}>
-                  Örnek: 05551234567 (0 ile başlayarak 11 haneli yazın)
+                  Opsiyonel. +905551234567
                 </Text>
               </View>
 
@@ -495,6 +746,57 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginLeft: 12,
     marginBottom: 8,
+  },
+  forgotPasswordButton: {
+    marginTop: 20,
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: '#E8F5E9',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#34C759',
+    shadowColor: '#34C759',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  forgotPasswordText: {
+    fontSize: 16,
+    color: '#34C759',
+    fontWeight: '700',
+  },
+  backButtonContainer: {
+    marginBottom: 20,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#34C759',
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  descriptionText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
   },
 });
 

@@ -339,35 +339,84 @@ router.post('/forgot-password', [
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetTokenExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-    // Save reset token to user
-    user.resetPasswordToken = resetToken;
-    user.resetPasswordExpiry = resetTokenExpiry;
-    await user.save();
-
-    // Send password reset email
+    // Save reset token to user - ÖNCE TOKEN'I KAYDET
     try {
+      user.resetPasswordToken = resetToken;
+      user.resetPasswordExpiry = resetTokenExpiry;
+      await user.save();
+      console.log('✅ Reset token saved to database');
+    } catch (saveError) {
+      console.error('❌ Error saving token:', saveError);
+      // Token kaydedilemese bile devam et, ama hata döndür
+      return res.status(500).json({
+        message: 'Token kaydedilemedi: ' + saveError.message
+      });
+    }
+
+    // Send password reset email - EMAIL GÖNDERİLEMESE BİLE TOKEN DÖNDÜR
+    try {
+      console.log('📧 Attempting to send password reset email to:', email);
       const emailResult = await sendPasswordResetEmail(email, resetToken);
+      
       if (emailResult.success) {
+        console.log('✅ Email sent successfully');
         res.json({
-          message: 'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi'
+          message: 'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi',
+          token: resetToken // Token'ı da response'da gönder (development için)
         });
       } else {
-        console.error('Email sending failed:', emailResult.error);
-        res.status(500).json({
-          message: 'Sıfırlama e-postası gönderilemedi. Lütfen daha sonra tekrar deneyin.'
+        console.error('❌ Email sending failed:', emailResult.error);
+        // Email gönderilemese bile token'ı döndür (mobil uygulama için)
+        // HER ZAMAN 200 OK DÖNDÜR, token var
+        res.json({
+          message: 'E-posta gönderilemedi, ancak sıfırlama token\'ı oluşturuldu. Lütfen token\'ı kullanarak şifrenizi sıfırlayın.',
+          token: resetToken,
+          warning: true
         });
       }
     } catch (emailError) {
-      console.error('Email sending error:', emailError);
-      res.status(500).json({
-        message: 'Sıfırlama e-postası gönderilemedi. Lütfen daha sonra tekrar deneyin.'
+      console.error('❌ Email sending exception:', emailError);
+      // Email gönderilemese bile token'ı döndür (mobil uygulama için)
+      // HER ZAMAN 200 OK DÖNDÜR, token var
+      res.json({
+        message: 'E-posta gönderilemedi, ancak sıfırlama token\'ı oluşturuldu. Lütfen token\'ı kullanarak şifrenizi sıfırlayın.',
+        token: resetToken,
+        warning: true
       });
     }
 
   } catch (error) {
-    console.error('Forgot password error:', error);
+    console.error('❌ Forgot password error:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code
+    });
+    
+    // Hata oluşsa bile token'ı döndürmeye çalış (eğer oluşturulduysa)
+    // Bu sayede kullanıcı şifresini sıfırlayabilir
+    try {
+      const { email } = req.body;
+      if (email) {
+        const user = await User.findOne({ email });
+        if (user && user.resetPasswordToken) {
+          console.log('⚠️  Error occurred but token exists, returning token anyway');
+          res.json({
+            message: 'Bir hata oluştu, ancak sıfırlama token\'ı oluşturuldu. Lütfen token\'ı kullanarak şifrenizi sıfırlayın.',
+            token: user.resetPasswordToken,
+            warning: true,
+            error: error.message
+          });
+          return;
+        }
+      }
+    } catch (tokenError) {
+      console.error('Error getting token:', tokenError);
+    }
+    
+    // Token yoksa gerçek hata mesajını döndür
     res.status(500).json({
-      message: 'Sunucu hatası'
+      message: 'Sunucu hatası: ' + (error.message || 'Bilinmeyen hata')
     });
   }
 });

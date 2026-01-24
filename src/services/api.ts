@@ -152,6 +152,40 @@ export const authAPI = {
     await AsyncStorage.removeItem('authToken');
   },
 
+  forgotPassword: async (email: string) => {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    }, 15000);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Şifre sıfırlama isteği başarısız' }));
+      throw new Error(errorData.message || 'Şifre sıfırlama isteği başarısız');
+    }
+
+    return await response.json();
+  },
+
+  resetPassword: async (token: string, password: string) => {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/auth/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token, password }),
+    }, 15000);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Şifre sıfırlama başarısız' }));
+      throw new Error(errorData.message || 'Şifre sıfırlama başarısız');
+    }
+
+    return await response.json();
+  },
+
   getMe: async () => {
     const headers = await getAuthHeaders();
     const response = await fetch(`${API_BASE_URL}/auth/me`, { headers });

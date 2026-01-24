@@ -22,3 +22,4 @@ export const getProductIds = () => {
 //      .then(data => console.table(data.products.map(p => ({ id: p._id, title: p.title }))))
 
 
+

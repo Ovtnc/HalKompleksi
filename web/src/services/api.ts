@@ -408,38 +408,30 @@ export const productsAPI = {
 // Categories API
 export const categoriesAPI = {
   getCategories: async () => {
-    // Try the main categories endpoint first (has slug field)
-    const url = `${ENV.API_BASE_URL}/categories`;
+    // Use /products/categories endpoint first (has correct hardcoded categories)
+    // This ensures we always get the correct categories: meyve, sebze, gıda, nakliye, kasa, zirai ilaç, ambalaj, indir-bindir, emlak, araç
+    const url = `${ENV.API_BASE_URL}/products/categories`;
     console.log('📡 Fetching categories from:', url);
     
     try {
       const response = await fetchWithTimeout(url, {}, 15000);
       
       if (!response.ok) {
-        // Fallback to products/categories if main endpoint fails
-        const fallbackUrl = `${ENV.API_BASE_URL}/products/categories`;
-        console.log('⚠️ Main categories endpoint failed, trying fallback:', fallbackUrl);
-        const fallbackResponse = await fetchWithTimeout(fallbackUrl, {}, 15000);
-        
-        if (!fallbackResponse.ok) {
-          await handleApiError(fallbackResponse, 'get categories');
-        }
-        
-        const fallbackData = await fallbackResponse.json();
-        // Transform fallback data to include slug from id
-        // Backend'de /products/categories endpoint'i id field'ı kullanıyor (meyve, sebze, vb.)
-        if (fallbackData.categories) {
-          fallbackData.categories = fallbackData.categories.map((cat: any) => ({
-            ...cat,
-            _id: cat.id || cat._id,
-            // id zaten slug olarak kullanılıyor (meyve, sebze, vb.)
-            slug: cat.slug || cat.id || cat.name?.toLowerCase().replace(/\s+/g, '_'),
-          }));
-        }
-        return fallbackData;
+        await handleApiError(response, 'get categories');
       }
       
-      return await response.json();
+      const data = await response.json();
+      // Transform data to include slug from id and _id field
+      // Backend'de /products/categories endpoint'i id field'ı kullanıyor (meyve, sebze, vb.)
+      if (data.categories) {
+        data.categories = data.categories.map((cat: any) => ({
+          ...cat,
+          _id: cat.id || cat._id,
+          // id zaten slug olarak kullanılıyor (meyve, sebze, vb.)
+          slug: cat.slug || cat.id || cat.name?.toLowerCase().replace(/\s+/g, '_'),
+        }));
+      }
+      return data;
     } catch (error: any) {
       console.error('❌ Error fetching categories:', error);
       throw error;

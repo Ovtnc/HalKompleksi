@@ -133,6 +133,19 @@ echo -e "${GREEN}🔐 Setting permissions...${NC}"
 chown -R www-data:www-data "$DEPLOY_DIR"
 chmod -R 755 "$DEPLOY_DIR"
 
+# Check if SSL certificate exists
+SSL_CERT="/etc/letsencrypt/live/$DOMAIN/fullchain.pem"
+SSL_KEY="/etc/letsencrypt/live/$DOMAIN/privkey.pem"
+HAS_SSL=false
+
+if [ -f "$SSL_CERT" ] && [ -f "$SSL_KEY" ]; then
+    HAS_SSL=true
+    echo -e "${GREEN}✅ SSL certificate found${NC}"
+else
+    echo -e "${YELLOW}⚠️  SSL certificate not found. Will create HTTP-only configuration.${NC}"
+    echo -e "${YELLOW}   Run 'sudo certbot --nginx -d $DOMAIN' after deployment.${NC}"
+fi
+
 # Check if nginx config already exists and has web app setup
 NEEDS_UPDATE=false
 if [ ! -f "/etc/nginx/sites-available/$DOMAIN" ]; then
@@ -146,11 +159,37 @@ elif ! grep -q "try_files.*index.html" "/etc/nginx/sites-available/$DOMAIN"; the
 fi
 
 if [ "$NEEDS_UPDATE" = true ]; then
-    cat > "/etc/nginx/sites-available/$DOMAIN" <<EOF
+    if [ "$HAS_SSL" = true ]; then
+        # HTTPS configuration
+        cat > "/etc/nginx/sites-available/$DOMAIN" <<EOF
+# HTTP to HTTPS redirect
 server {
     listen 80;
     listen [::]:80;
     server_name $DOMAIN www.$DOMAIN;
+    return 301 https://\$server_name\$request_uri;
+}
+
+# HTTPS server
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name $DOMAIN www.$DOMAIN;
+
+    # SSL Configuration
+    ssl_certificate $SSL_CERT;
+    ssl_certificate_key $SSL_KEY;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
 
     # Root directory for web app
     root $DEPLOY_DIR;

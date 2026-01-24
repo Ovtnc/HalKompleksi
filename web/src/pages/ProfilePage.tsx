@@ -14,7 +14,7 @@ import {
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const { user, logout, switchRole } = useAuth();
+  const { user, logout, switchRole, isLoading } = useAuth();
 
   const handleLogout = async () => {
     if (window.confirm('Hesabınızdan çıkış yapmak istediğinizden emin misiniz?')) {
@@ -26,17 +26,21 @@ const ProfilePage = () => {
   const handleSwitchRole = async (role: 'buyer' | 'seller') => {
     if (!user) return;
     
+    // Prevent multiple clicks
+    if (isLoading) return;
+    
     try {
+      // Switch role and wait for completion
       await switchRole(role);
       
-      // Show success message
-      alert(`Artık ${role === 'buyer' ? 'Alıcı' : 'Satıcı'} olarak giriş yaptınız.`);
+      // Small delay to ensure state is updated
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Navigate based on role
       if (role === 'seller') {
-        navigate('/app/seller/dashboard');
+        navigate('/app/seller/dashboard', { replace: true });
       } else {
-        navigate('/');
+        navigate('/app', { replace: true });
       }
     } catch (error: any) {
       console.error('Error switching role:', error);
@@ -44,8 +48,11 @@ const ProfilePage = () => {
       // Geçici hatalar için rol zaten güncellenmiş olacak
       if (error?.message?.includes('Unauthorized') || 
           error?.message?.includes('401') ||
-          error?.message?.includes('403')) {
+          error?.message?.includes('403') ||
+          error?.message?.includes('Token') ||
+          error?.message?.includes('token')) {
         alert('Rol değiştirilirken bir hata oluştu. Lütfen tekrar giriş yapın.');
+        navigate('/login');
       }
       // Diğer hatalar için sessizce devam et (rol zaten güncellendi)
     }
@@ -144,7 +151,7 @@ const ProfilePage = () => {
         {isSeller && !isAdmin && (
           <div className="mb-6">
             <button
-              onClick={() => navigate('/seller/dashboard')}
+              onClick={() => navigate('/app/seller/dashboard')}
               className="w-full bg-gradient-to-r from-primary to-primary-dark text-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center justify-between group"
             >
               <div className="flex items-center gap-4">
@@ -215,7 +222,7 @@ const ProfilePage = () => {
           {/* Menu Items */}
           <div className="space-y-3">
             <button
-              onClick={() => navigate('/favorites')}
+              onClick={() => navigate('/app/favorites')}
               className="w-full flex items-center justify-between p-5 bg-white rounded-2xl border border-gray-200 hover:border-primary hover:shadow-md transition-all group"
             >
               <div className="flex items-center gap-4">
@@ -268,7 +275,7 @@ const ProfilePage = () => {
 
             {isSeller && !isAdmin && (
               <button
-                onClick={() => navigate('/seller/dashboard')}
+                onClick={() => navigate('/app/seller/dashboard')}
                 className="w-full flex items-center justify-between p-5 bg-gradient-to-r from-primary/5 to-primary-dark/5 rounded-2xl border-2 border-primary/20 hover:border-primary/40 hover:shadow-md transition-all group"
               >
                 <div className="flex items-center gap-4">

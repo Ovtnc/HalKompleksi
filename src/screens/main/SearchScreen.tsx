@@ -23,6 +23,7 @@ import { useAuth } from '../../services/AuthContext';
 import { productsAPI, locationsAPI } from '../../services/api';
 import { Product } from '../../types';
 import { useProductRefresh } from '../../hooks/useProductRefresh';
+import { normalizeCities, addAllCitiesOption, getFallbackCities, type NormalizedCity } from '../../utils/cityHelpers';
 
 const { width, height } = Dimensions.get('window');
 
@@ -62,7 +63,7 @@ const SearchScreen = () => {
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeFilters, setActiveFilters] = useState(0);
-  const [cities, setCities] = useState<any[]>([]);
+  const [cities, setCities] = useState<NormalizedCity[]>([]);
   const [customTitle, setCustomTitle] = useState<string | null>(null);
 
   const [filters, setFilters] = useState<SearchFilters>({
@@ -234,37 +235,26 @@ const SearchScreen = () => {
   const loadCities = async () => {
     try {
       const response = await locationsAPI.getCities();
+      
       if (response && response.cities && Array.isArray(response.cities)) {
-        // "Tüm Şehirler" seçeneğini başa ekle
-        const allCities = [
-          { id: 'all', name: 'Tüm Şehirler', icon: 'globe-outline' },
-          ...response.cities.map((city: string) => ({
-            id: city.toLowerCase().replace(/[^a-z0-9]/g, '_'),
-            name: city,
-            icon: 'location-outline'
-          }))
-        ];
-        setCities(allCities);
+        // Normalize cities with helper
+        const normalized = normalizeCities(response.cities);
+        // Add "All Cities" option
+        const withAllOption = addAllCitiesOption(normalized);
+        setCities(withAllOption);
       } else {
         console.error('Invalid cities response:', response);
-        setCities([]);
+        // Use fallback cities
+        const fallback = getFallbackCities();
+        const withAllOption = addAllCitiesOption(fallback);
+        setCities(withAllOption);
       }
     } catch (error) {
       console.error('Error loading cities:', error);
       // Fallback: Eğer API çalışmazsa varsayılan şehirleri kullan
-      setCities([
-        { id: 'all', name: 'Tüm Şehirler', icon: 'globe-outline' },
-        { id: 'istanbul', name: 'İstanbul', icon: 'location-outline' },
-        { id: 'ankara', name: 'Ankara', icon: 'location-outline' },
-        { id: 'izmir', name: 'İzmir', icon: 'location-outline' },
-        { id: 'bursa', name: 'Bursa', icon: 'location-outline' },
-        { id: 'antalya', name: 'Antalya', icon: 'location-outline' },
-        { id: 'adana', name: 'Adana', icon: 'location-outline' },
-        { id: 'konya', name: 'Konya', icon: 'location-outline' },
-        { id: 'gaziantep', name: 'Gaziantep', icon: 'location-outline' },
-        { id: 'mersin', name: 'Mersin', icon: 'location-outline' },
-        { id: 'diyarbakir', name: 'Diyarbakır', icon: 'location-outline' },
-      ]);
+      const fallback = getFallbackCities();
+      const withAllOption = addAllCitiesOption(fallback);
+      setCities(withAllOption);
     }
   };
 

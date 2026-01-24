@@ -16,7 +16,7 @@ import {
 
 const SellerDashboardPage = () => {
   const navigate = useNavigate();
-  const { user, updateUser } = useAuth();
+  const { user, switchRole } = useAuth();
   const [stats, setStats] = useState({
     totalProducts: 0,
     activeProducts: 0,
@@ -41,18 +41,36 @@ const SellerDashboardPage = () => {
       navigate('/app/profile', { 
         state: { 
           message: 'Satıcı paneline erişmek için önce satıcı rolüne geçmeniz gerekiyor.' 
-        } 
+        },
+        replace: true
       });
       return;
     }
 
-    // Ensure user is in seller role
+    // Ensure user is in seller role - use switchRole to sync with backend
     if (user.activeRole !== 'seller' && hasSellerRole) {
       console.log('🔄 Switching to seller role...');
-      updateUser({ activeRole: 'seller' });
+      switchRole('seller')
+        .then(() => {
+          // Role switched successfully, load dashboard data
+          loadDashboardData();
+        })
+        .catch((error) => {
+          console.error('Error switching to seller role:', error);
+          // If switch fails, redirect to profile
+          navigate('/app/profile', { 
+            state: { 
+              message: 'Rol değiştirilemedi. Lütfen tekrar deneyin.' 
+            },
+            replace: true
+          });
+        });
+      return; // Don't load data until role is switched
     }
 
+    // User is already in seller role, load dashboard data
     loadDashboardData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, navigate]);
 
   const loadDashboardData = async () => {

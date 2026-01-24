@@ -164,24 +164,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const switchRole = async (role: 'buyer' | 'seller') => {
-    if (!user) return;
+    if (!user) {
+      throw new Error('Kullanıcı bulunamadı');
+    }
     
-    // Hangi storage kullanılıyorsa oraya kaydet
-    const rememberMe = localStorage.getItem('rememberMe') === 'true' || sessionStorage.getItem('authToken') === null;
-    const storage = rememberMe ? localStorage : sessionStorage;
+    // Hangi storage kullanılıyorsa belirle
+    // Önce localStorage'da rememberMe kontrolü yap
+    const rememberMe = localStorage.getItem('rememberMe') === 'true';
+    // Eğer localStorage'da token varsa ve rememberMe true ise localStorage kullan
+    // Değilse sessionStorage kullan
+    const hasLocalToken = localStorage.getItem('authToken') !== null;
+    const hasSessionToken = sessionStorage.getItem('authToken') !== null;
+    
+    let storage: Storage;
+    if (rememberMe && hasLocalToken) {
+      storage = localStorage;
+    } else if (hasSessionToken) {
+      storage = sessionStorage;
+    } else if (hasLocalToken) {
+      // Fallback: localStorage'da token varsa onu kullan
+      storage = localStorage;
+    } else {
+      // Hiçbirinde token yoksa localStorage kullan (default)
+      storage = localStorage;
+    }
     
     try {
+      setIsLoading(true);
+      
       // Update role on backend
       const response = await authAPI.switchRole(role);
       
-      // Update local state
+      // Update local state with backend response
       if (response.user) {
-        storage.setItem('userData', JSON.stringify(response.user));
-        setUser(response.user);
+        const updatedUser = response.user;
+        // Her iki storage'ı da güncelle (senkronizasyon için)
+        storage.setItem('userData', JSON.stringify(updatedUser));
+        // Diğer storage'ı da güncelle (eğer farklıysa)
+        const otherStorage = storage === localStorage ? sessionStorage : localStorage;
+        if (otherStorage.getItem('authToken')) {
+          otherStorage.setItem('userData', JSON.stringify(updatedUser));
+        }
+        setUser(updatedUser);
       } else {
         // Fallback: update locally if backend doesn't return user
         const updatedUser = { ...user, activeRole: role };
         storage.setItem('userData', JSON.stringify(updatedUser));
+        const otherStorage = storage === localStorage ? sessionStorage : localStorage;
+        if (otherStorage.getItem('authToken')) {
+          otherStorage.setItem('userData', JSON.stringify(updatedUser));
+        }
         setUser(updatedUser);
         console.warn('⚠️ Backend did not return user data, updated locally');
       }
@@ -192,12 +224,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Ancak sadece network hatası veya geçici hatalar için, auth hatası değilse
       const isAuthError = error?.message?.includes('Unauthorized') || 
                          error?.message?.includes('401') ||
-                         error?.message?.includes('403');
+                         error?.message?.includes('403') ||
+                         error?.message?.includes('Token') ||
+                         error?.message?.includes('token');
       
       if (!isAuthError) {
         // Geçici hata (network, timeout vb.) - local'de güncelle ama hata fırlatma
         const updatedUser = { ...user, activeRole: role };
         storage.setItem('userData', JSON.stringify(updatedUser));
+        const otherStorage = storage === localStorage ? sessionStorage : localStorage;
+        if (otherStorage.getItem('authToken')) {
+          otherStorage.setItem('userData', JSON.stringify(updatedUser));
+        }
         setUser(updatedUser);
         console.warn('⚠️ Backend error but role updated locally:', error.message);
         // Hata fırlatma - rol zaten güncellendi
@@ -206,6 +244,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Auth hatası - hata fırlat
         throw error;
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 

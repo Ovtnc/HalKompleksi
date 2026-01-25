@@ -34,6 +34,7 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
   const [productsLoading, setProductsLoading] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
 
+<<<<<<< HEAD
   useEffect(() => {
     loadData();
   }, []);
@@ -47,6 +48,9 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
     ]);
   };
 
+=======
+  // Memoize loadProducts to prevent infinite loops
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
   const loadProducts = useCallback(async () => {
     try {
       setProductsLoading(true);
@@ -74,12 +78,25 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
     } finally {
       setProductsLoading(false);
     }
+<<<<<<< HEAD
   }, []); // Empty deps - function never changes
+=======
+  }, []); // Empty dependency array - function won't change
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
 
-  // Initialize auto-refresh now that loadProducts is defined
-  useProductRefresh(loadProducts);
+  const loadData = useCallback(async () => {
+    await Promise.all([
+      loadProducts(),
+      loadCategories()
+    ]);
+  }, [loadProducts, loadCategories]);
 
-  const loadCategories = async () => {
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Memoize loadCategories to prevent infinite loops
+  const loadCategories = useCallback(async () => {
     try {
       setCategoriesLoading(true);
       console.log('🔄 Loading categories from backend...');
@@ -96,7 +113,10 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
     } finally {
       setCategoriesLoading(false);
     }
-  };
+  }, []);
+
+  // Auto-refresh products when user profile is updated
+  useProductRefresh(loadProducts);
 
   const handleSearch = () => {
     console.log('🔍 HOMESCREEN: Handle search called');

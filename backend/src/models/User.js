@@ -21,10 +21,12 @@ const userSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    required: [true, 'Telefon numarası gereklidir'],
+    required: false, // Apple App Store requirement: Phone is optional
     // +90 ile başlayan veya 0 ile başlayan 11 haneli numara
     validate: {
       validator: function(v) {
+        // Phone is optional, only validate if provided
+        if (!v || v === '' || v === '0') return true;
         // +905XXXXXXXXX veya 05XXXXXXXXX formatı
         return /^\+?905[0-9]{9}$/.test(v) || /^05[0-9]{9}$/.test(v);
       },
@@ -49,6 +51,32 @@ const userSchema = new mongoose.Schema({
   },
   resetPasswordExpiry: {
     type: Date
+  },
+  resetPasswordCode: {
+    type: String, // 4 haneli kod
+    required: false
+  },
+  resetPasswordCodeExpiry: {
+    type: Date, // Kod geçerlilik süresi (10 dakika)
+    required: false
+  },
+  securityQuestion: {
+    type: String,
+    required: false,
+    enum: [
+      'Annemin kızlık soyadı nedir?',
+      'İlk evcil hayvanımın adı nedir?',
+      'En sevdiğim öğretmenimin adı nedir?',
+      'Doğduğum şehir neresidir?',
+      'İlk okuduğum okulun adı nedir?',
+      'En sevdiğim yemek nedir?',
+      'Çocukluk lakabım nedir?',
+      'En iyi arkadaşımın adı nedir?'
+    ]
+  },
+  securityAnswer: {
+    type: String, // Hash'lenmiş olarak saklanacak
+    required: false
   },
   profileImage: {
     type: String,
@@ -165,20 +193,38 @@ userSchema.pre('save', function(next) {
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  
-  try {
-    const salt = await bcrypt.genSalt(12);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
+  // Hash password if modified
+  if (this.isModified('password')) {
+    try {
+      const salt = await bcrypt.genSalt(12);
+      this.password = await bcrypt.hash(this.password, salt);
+    } catch (error) {
+      return next(error);
+    }
   }
+  
+  // Hash security answer if modified
+  if (this.isModified('securityAnswer') && this.securityAnswer) {
+    try {
+      const salt = await bcrypt.genSalt(12);
+      this.securityAnswer = await bcrypt.hash(this.securityAnswer.toLowerCase().trim(), salt);
+    } catch (error) {
+      return next(error);
+    }
+  }
+  
+  next();
 });
 
 // Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Compare security answer method
+userSchema.methods.compareSecurityAnswer = async function(candidateAnswer) {
+  if (!this.securityAnswer) return false;
+  return await bcrypt.compare(candidateAnswer.toLowerCase().trim(), this.securityAnswer);
 };
 
 // Remove password from JSON output

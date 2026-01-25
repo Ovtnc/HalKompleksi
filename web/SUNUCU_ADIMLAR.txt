@@ -1,0 +1,15 @@
+# Sunucuda Çalıştırılacak Komutlar (Sırayla)
+
+# 1. Git repository'yi clone edin
+cd /opt
+git clone https://github.com/Ovtnc/HalKompleksi.git
+
+# 2. Web dizinine gidin
+cd HalKompleksi/web
+
+# 3. Script'i çalıştırılabilir yapın
+chmod +x deploy-ssgile-git.sh
+
+# 4. Deployment script'ini çalıştırın
+sudo ./deploy-ssgile-git.sh
+

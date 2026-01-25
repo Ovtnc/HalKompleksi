@@ -36,6 +36,12 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# Backend uploads and backups
+backend/uploads/
+backend/logs/
+backend/*.backup
+backend/.env.backup*
+
 # generated native folders
 /ios
 /android

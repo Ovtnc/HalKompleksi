@@ -1,6 +1,7 @@
 const express = require('express');
 const { productUpload, profileUpload, marketReportUpload } = require('../middleware/upload');
 const { auth } = require('../middleware/auth');
+const { WEB_URL } = require('../config/urls');
 const path = require('path');
 
 const router = express.Router();
@@ -45,12 +46,11 @@ router.post('/profile-image', auth, (req, res, next) => {
     });
 
     // Dosya URL'sini oluştur
-    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/profiles/${req.file.filename}`;
+    const imageUrl = `${WEB_URL}/uploads/profiles/${req.file.filename}`;
 
     console.log('✅ Profile image uploaded successfully:', imageUrl);
     console.log('✅ URL components:', {
-      protocol: req.protocol,
-      host: req.get('host'),
+      baseUrl: WEB_URL,
       filename: req.file.filename,
       fullUrl: imageUrl
     });
@@ -82,7 +82,7 @@ router.post('/image', auth, productUpload.single('image'), (req, res) => {
     }
 
     // Dosya URL'sini oluştur
-    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/products/${req.file.filename}`;
+    const imageUrl = `${WEB_URL}/uploads/products/${req.file.filename}`;
 
     res.json({
       message: 'Resim başarıyla yüklendi',
@@ -112,7 +112,7 @@ router.post('/images', auth, productUpload.array('images', 10), (req, res) => {
 
     // Dosya URL'lerini oluştur
     const imageUrls = req.files.map(file => ({
-      url: `${req.protocol}://${req.get('host')}/uploads/products/${file.filename}`,
+      url: `${WEB_URL}/uploads/products/${file.filename}`,
       filename: file.filename,
       type: file.mimetype.startsWith('video/') ? 'video' : 'image',
       isPrimary: false
@@ -185,7 +185,7 @@ router.post('/media', auth, (req, res, next) => {
     });
     
     // Dosya URL'sini oluştur
-    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/products/${req.file.filename}`;
+    const fileUrl = `${WEB_URL}/uploads/products/${req.file.filename}`;
 
     res.json({
       message: fileType === 'video' ? 'Video başarıyla yüklendi' : 'Görsel başarıyla yüklendi',

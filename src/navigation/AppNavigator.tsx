@@ -65,6 +65,7 @@ const CustomTabMenu = () => {
   useEffect(() => {
     if (pendingNavigation) {
       console.log('🔗 Handling pending navigation:', pendingNavigation);
+<<<<<<< HEAD
       
       // Reset password deep link
       if (pendingNavigation.screen === 'ResetPassword' && pendingNavigation.params?.code) {
@@ -79,6 +80,10 @@ const CustomTabMenu = () => {
         setNavigationParams(pendingNavigation.params);
       }
       
+=======
+      setCurrentScreen(pendingNavigation.screen);
+      setNavigationParams(pendingNavigation.params);
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
       clearPendingNavigation();
     }
   }, [pendingNavigation, clearPendingNavigation]);
@@ -357,12 +362,15 @@ const CustomTabMenu = () => {
       return <MarketShareScreen navigation={adminNavigation} />;
     }
 
+<<<<<<< HEAD
     // Reset Password deep link handler
     if (pendingNavigation && pendingNavigation.screen === 'ResetPassword' && pendingNavigation.params?.code) {
       // NewAuthScreen'e navigate et ve code'u pass et
       return <NewAuthScreen navigationParams={pendingNavigation.params} />;
     }
 
+=======
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
     // Guest Mode: Show login screen for account-based features
     if (isGuest && (currentScreen === 'Profile' || currentScreen === 'Favorites' || 
         currentScreen === 'MyProducts' || currentScreen === 'SellerDashboard' ||

@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider } from './src/contexts/AuthContext';
+import { DeepLinkProvider } from './src/contexts/DeepLinkContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import ErrorBoundary from './src/components/ErrorBoundary';
 
@@ -41,6 +42,25 @@ console.error = (...args) => {
   // Log to crash reporting service (Sentry, Firebase, etc.)
 };
 
+// Deep linking configuration
+const linking = {
+  prefixes: ['halkompleksi://', 'https://halkompleksi.com'],
+  config: {
+    screens: {
+      MainTabs: {
+        screens: {
+          Home: 'home',
+          Products: 'products',
+          Profile: 'profile',
+        },
+      },
+      ProductDetail: 'product/:productId',
+      Login: 'login',
+      Register: 'register',
+    },
+  },
+};
+
 export default function App() {
   useEffect(() => {
     // Set global error handler
@@ -53,12 +73,14 @@ export default function App() {
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
-          <AuthProvider>
-            <NavigationContainer>
-              <AppNavigator />
-            </NavigationContainer>
-            <StatusBar barStyle="light-content" />
-          </AuthProvider>
+          <DeepLinkProvider>
+            <AuthProvider>
+              <NavigationContainer linking={linking}>
+                <AppNavigator />
+              </NavigationContainer>
+              <StatusBar barStyle="light-content" />
+            </AuthProvider>
+          </DeepLinkProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>
     </ErrorBoundary>

@@ -187,7 +187,7 @@ router.put('/products/:id/reject', [auth, adminOnly], async (req, res) => {
     product.isFeatured = false; // Onaysız ürün öne çıkamaz
     product.rejectionReason = reason || 'Admin tarafından onay kaldırıldı';
     product.rejectedAt = new Date();
-    product.rejectedBy = req.user.id;
+    product.rejectedBy = req.user._id || req.user.id;
     
     console.log('🚫 Admin: Updating product with rejection...');
     console.log('🚫 Admin: Product before update:', {
@@ -208,7 +208,7 @@ router.put('/products/:id/reject', [auth, adminOnly], async (req, res) => {
           isFeatured: false,
           rejectionReason: reason || 'Admin tarafından onay kaldırıldı',
           rejectedAt: new Date(),
-          rejectedBy: req.user.id
+          rejectedBy: req.user._id || req.user.id
         }
       }
     );
@@ -278,30 +278,132 @@ router.get('/users', [auth, adminOnly], async (req, res) => {
 // @access  Private (Admin only)
 router.put('/users/:id/block', [auth, adminOnly], async (req, res) => {
   try {
+    console.log('🔒 Admin: Block user request received');
+    console.log('🔒 Admin: Request params:', req.params);
+    console.log('🔒 Admin: Request body:', req.body);
+    console.log('🔒 Admin: Current user:', req.user ? { id: req.user._id, email: req.user.email } : 'NOT FOUND');
+    
     const { isActive } = req.body;
+    
+    if (isActive === undefined || isActive === null) {
+      console.error('❌ Admin: isActive is missing in request body');
+      return res.status(400).json({ message: 'isActive parametresi gereklidir' });
+    }
+    
+    // Ensure isActive is a boolean
+    const isActiveBoolean = isActive === true || isActive === 'true' || isActive === 1 || isActive === '1';
+    
+    console.log('🔒 Admin: Blocking user:', {
+      userId: req.params.id,
+      isActive: isActive,
+      isActiveType: typeof isActive,
+      isActiveBoolean: isActiveBoolean
+    });
+    
+    // Validate user ID format
+    if (!req.params.id || !req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+      console.error('❌ Admin: Invalid user ID format:', req.params.id);
+      return res.status(400).json({ message: 'Geçersiz kullanıcı ID formatı' });
+    }
     
     const user = await User.findById(req.params.id);
     
     if (!user) {
+      console.error('❌ Admin: User not found:', req.params.id);
       return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
     }
 
-    user.isActive = isActive;
-    await user.save();
+    console.log('🔒 Admin: Found user:', {
+      id: user._id,
+      email: user.email,
+      currentIsActive: user.isActive
+    });
+
+    // Prevent blocking yourself
+    const currentUserId = req.user._id ? req.user._id.toString() : (req.user.id ? req.user.id.toString() : null);
+    if (!currentUserId) {
+      console.error('❌ Admin: Cannot determine current user ID');
+      return res.status(500).json({ message: 'Kullanıcı kimliği belirlenemedi' });
+    }
+    
+    if (user._id.toString() === currentUserId) {
+      console.error('❌ Admin: User trying to block themselves');
+      return res.status(400).json({ message: 'Kendi hesabınızı engelleyemezsiniz' });
+    }
+
+    console.log('🔒 Admin: Updating user isActive field...');
+    
+    // Use updateOne to avoid triggering pre-save hooks that might cause issues
+    const updateResult = await User.updateOne(
+      { _id: req.params.id },
+      { $set: { isActive: isActiveBoolean } }
+    );
+
+    console.log('🔒 Admin: Update result:', {
+      matchedCount: updateResult.matchedCount,
+      modifiedCount: updateResult.modifiedCount,
+      acknowledged: updateResult.acknowledged
+    });
+
+    if (updateResult.matchedCount === 0) {
+      console.error('❌ Admin: User not found during update');
+      return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
+    }
+
+    if (updateResult.modifiedCount === 0) {
+      console.log('⚠️ Admin: User status not changed (already set to this value)');
+    }
+
+    // Fetch updated user - use lean() to avoid triggering validation
+    console.log('🔒 Admin: Fetching updated user...');
+    const updatedUser = await User.findById(req.params.id).select('-password').lean();
+
+    if (!updatedUser) {
+      console.error('❌ Admin: Updated user not found after update');
+      return res.status(500).json({ message: 'Kullanıcı güncellendikten sonra bulunamadı' });
+    }
+
+    console.log('✅ Admin: User blocked/unblocked successfully:', {
+      userId: req.params.id,
+      oldIsActive: user.isActive,
+      newIsActive: updatedUser.isActive
+    });
 
     res.json({
-      message: `User ${isActive ? 'unblocked' : 'blocked'} successfully`,
+      message: `Kullanıcı ${isActiveBoolean ? 'aktifleştirildi' : 'engellendi'}`,
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        userType: user.userType,
-        isActive: user.isActive
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        userType: updatedUser.userType,
+        isActive: updatedUser.isActive
       }
     });
   } catch (error) {
-    console.error('Block user error:', error);
-    res.status(500).json({ message: 'Sunucu hatası' });
+    console.error('❌ Admin: Block user error:', error);
+    console.error('❌ Admin: Error name:', error.name);
+    console.error('❌ Admin: Error message:', error.message);
+    console.error('❌ Admin: Error stack:', error.stack);
+    
+    // Check for specific error types
+    if (error.name === 'CastError') {
+      return res.status(400).json({ 
+        message: 'Geçersiz kullanıcı ID formatı',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ 
+        message: 'Doğrulama hatası',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+    
+    res.status(500).json({ 
+      message: 'Sunucu hatası',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
@@ -577,6 +679,95 @@ router.get('/users/:userId/products', [auth, adminOnly], async (req, res) => {
   } catch (error) {
     console.error('Get user products error:', error);
     res.status(500).json({ message: 'Sunucu hatası' });
+  }
+});
+
+// @route   POST /api/admin/load-cities
+// @desc    Load Turkish cities and districts from Turkiye API
+// @access  Public (Temporarily for setup)
+router.post('/load-cities', async (req, res) => {
+  try {
+    console.log('🏙️ Admin: Loading cities from Turkiye API...');
+    
+    // Import Location model
+    const Location = require('../models/Location');
+    
+    // Fetch data from Turkiye API
+    const response = await fetch('https://turkiyeapi.dev/api/v1/provinces');
+    
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+    
+    const data = await response.json();
+    const citiesData = data.data;
+    
+    console.log(`✅ Fetched ${citiesData.length} cities from API`);
+    
+    let savedCount = 0;
+    let updatedCount = 0;
+    let errorCount = 0;
+    
+    // Save each city to database
+    for (const cityData of citiesData) {
+      try {
+        // Check if city already exists
+        const existingCity = await Location.findOne({ name: cityData.name });
+        
+        // Prepare districts
+        const districts = (cityData.districts || []).map(district => ({
+          name: district.name,
+          isActive: true,
+          createdAt: new Date()
+        }));
+        
+        if (existingCity) {
+          // Update existing city
+          existingCity.code = cityData.id.toString().padStart(2, '0');
+          existingCity.districts = districts;
+          existingCity.isActive = true;
+          existingCity.updatedAt = new Date();
+          await existingCity.save();
+          updatedCount++;
+          console.log(`🔄 Updated: ${cityData.name} (${districts.length} districts)`);
+        } else {
+          // Create new city
+          const newCity = new Location({
+            name: cityData.name,
+            code: cityData.id.toString().padStart(2, '0'),
+            districts: districts,
+            isActive: true
+          });
+          await newCity.save();
+          savedCount++;
+          console.log(`✅ Saved: ${cityData.name} (${districts.length} districts)`);
+        }
+      } catch (error) {
+        errorCount++;
+        console.error(`❌ Error processing ${cityData.name}:`, error.message);
+      }
+    }
+    
+    // Verify the data
+    const totalCities = await Location.countDocuments({ isActive: true });
+    
+    res.json({
+      success: true,
+      message: 'Cities loaded successfully',
+      stats: {
+        newCities: savedCount,
+        updatedCities: updatedCount,
+        errors: errorCount,
+        totalCities: totalCities
+      }
+    });
+  } catch (error) {
+    console.error('❌ Load cities error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to load cities', 
+      error: error.message 
+    });
   }
 });
 

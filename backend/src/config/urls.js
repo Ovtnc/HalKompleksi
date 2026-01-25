@@ -11,21 +11,13 @@ const DEV_CONFIG = {
   PORT: 5001,
 };
 
-// 🚀 PRODUCTION (Canlı Sunucu) - IP veya Domain
+// 🚀 PRODUCTION (Canlı Sunucu) - HTTPS Domain
 const PROD_CONFIG = {
-  // IP ile kullanım (HTTPS yapılandırması yapılana kadar)
-  API_URL: 'http://109.199.114.223:5001/api',
-  WEB_URL: 'http://109.199.114.223:5001',
-  FRONTEND_URL: 'http://109.199.114.223:5001',
-  DOMAIN: '109.199.114.223',
+  API_URL: 'https://halkompleksi.com/api',
+  WEB_URL: 'https://halkompleksi.com',
+  FRONTEND_URL: 'https://halkompleksi.com',
+  DOMAIN: 'halkompleksi.com',
   PORT: 5001,
-  
-  // Domain ile kullanım için (SSL sertifikası sonrası):
-  // API_URL: 'https://halkompleksi.com/api',
-  // WEB_URL: 'https://halkompleksi.com',
-  // FRONTEND_URL: 'https://halkompleksi.com',
-  // DOMAIN: 'halkompleksi.com',
-  // PORT: 443,
 };
 
 // 🎯 Aktif konfigürasyon seçimi

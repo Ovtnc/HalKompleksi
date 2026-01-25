@@ -66,7 +66,8 @@ router.get('/cities', async (req, res) => {
       .select('name code')
       .sort({ name: 1 });
     
-    res.json(cities);
+    // Return in expected format with cities wrapper
+    res.json({ cities });
   } catch (error) {
     console.error('Error fetching cities:', error);
     res.status(500).json({ message: 'Sunucu hatası', error: error.message });

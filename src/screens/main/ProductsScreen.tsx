@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import { Product } from '../../types';
 import { productsAPI, categoriesAPI, locationsAPI } from '../../services/api';
 import { ENV } from '../../config/env';
 import { useProductRefresh } from '../../hooks/useProductRefresh';
+import { normalizeCities, addAllCitiesOption, getFallbackCities, type NormalizedCity } from '../../utils/cityHelpers';
 
 const { width } = Dimensions.get('window');
 
@@ -34,7 +35,7 @@ const ProductsScreen = ({ navigation, route }: ProductsScreenProps) => {
   const [showFilters, setShowFilters] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [cities, setCities] = useState<any[]>([]);
+  const [cities, setCities] = useState<NormalizedCity[]>([]);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationSearchQuery, setLocationSearchQuery] = useState('');
   
@@ -82,7 +83,7 @@ const ProductsScreen = ({ navigation, route }: ProductsScreenProps) => {
       console.log('❌ PRODUCTS: No search query, category, or filter found, loading all products');
       loadProducts();
     }
-  }, [route?.params?.searchQuery, route?.params?.category, route?.params?.filter]);
+  }, [route?.params?.searchQuery, route?.params?.category, route?.params?.filter, loadProducts]);
 
   const loadInitialData = async () => {
     try {
@@ -94,15 +95,19 @@ const ProductsScreen = ({ navigation, route }: ProductsScreenProps) => {
         locationsAPI.getCities()
       ]);
       
+<<<<<<< HEAD
       console.log('📦 Categories response:', categoriesResponse);
       console.log('📦 Cities response:', citiesResponse);
       console.log('🏙️ Cities type:', Array.isArray(citiesResponse) ? 'Array' : 'Object');
       
+=======
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
       // Handle different response formats
       const citiesArray = Array.isArray(citiesResponse) 
         ? citiesResponse  // Direct array from backend
         : (citiesResponse?.cities || []);  // Wrapped in cities property
       
+<<<<<<< HEAD
       console.log('🏙️ Cities array length:', citiesArray.length);
       
       setCategories(categoriesResponse.categories || []);
@@ -110,12 +115,27 @@ const ProductsScreen = ({ navigation, route }: ProductsScreenProps) => {
       
       console.log('✅ Categories loaded:', categoriesResponse.categories?.length || 0);
       console.log('✅ Cities loaded:', citiesArray.length);
+=======
+      // Normalize cities with helper
+      const normalized = normalizeCities(citiesArray);
+      
+      // Add "All Cities" option
+      const withAllOption = addAllCitiesOption(normalized);
+      
+      setCategories(categoriesResponse.categories || []);
+      setCities(withAllOption);
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
     } catch (error) {
       console.error('Error loading initial data:', error);
+      // Use fallback cities
+      const fallback = getFallbackCities();
+      const withAllOption = addAllCitiesOption(fallback);
+      setCities(withAllOption);
     }
   };
 
-  const loadProducts = async () => {
+  // Memoize loadProducts to prevent infinite loops
+  const loadProducts = useCallback(async () => {
     try {
       setLoading(true);
       console.log('🔄 PRODUCTS: Loading all products');
@@ -132,7 +152,7 @@ const ProductsScreen = ({ navigation, route }: ProductsScreenProps) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handleSearch = async (query: string) => {
     try {
@@ -647,7 +667,18 @@ const ProductsScreen = ({ navigation, route }: ProductsScreenProps) => {
 
           <FlatList
             data={filteredCities}
+<<<<<<< HEAD
               renderItem={({ item }) => (
+=======
+            ListEmptyComponent={() => (
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <Text style={{ fontSize: 16, color: '#666' }}>
+                  Şehir bulunamadı
+                </Text>
+              </View>
+            )}
+            renderItem={({ item }) => (
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
               <TouchableOpacity
                 style={styles.cityItem}
                 onPress={async () => {
@@ -685,7 +716,7 @@ const ProductsScreen = ({ navigation, route }: ProductsScreenProps) => {
                 }}
               >
                 <Text style={styles.cityName}>{item.name}</Text>
-                <Text style={styles.cityCode}>{item.code}</Text>
+                {item.code && <Text style={styles.cityCode}>{item.code}</Text>}
               </TouchableOpacity>
             )}
             keyExtractor={(item) => item._id || item.id || item.code}

@@ -134,7 +134,7 @@ const RegisterScreen = ({ navigation }: any) => {
                   />
                 </View>
                 <Text style={styles.helperText}>
-                  Örnek: 05551234567 (0 ile başlayarak 11 haneli yazın)
+                  +905551234567 (0 ile başlayarak 11 haneli yazın)
                 </Text>
               </View>
 

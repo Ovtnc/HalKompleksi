@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const mongoose = require('mongoose');
 const errorHandler = require('./middleware/errorHandler');
 require('dotenv').config();
 
@@ -19,6 +20,7 @@ const locationRoutes = require('./routes/locations');
 const notificationRoutes = require('./routes/notifications');
 const marketReportRoutes = require('./routes/marketReports');
 const categoryRoutes = require('./routes/categories');
+const testEmailRoutes = require('./routes/testEmail');
 
 const app = express();
 
@@ -27,11 +29,69 @@ app.set('trust proxy', true);
 
 const PORT = urlConfig.PORT;
 
+// Trust proxy - Nginx reverse proxy için gerekli
+app.set('trust proxy', true);
+
 // Connect to MongoDB
 connectDB();
 
-// Security middleware
-app.use(helmet());
+// Initialize cities on startup (if not exists)
+const initializeCities = async () => {
+  try {
+    const Location = require('./models/Location');
+    const count = await Location.countDocuments();
+    
+    if (count === 0) {
+      const response = await fetch('https://turkiyeapi.dev/api/v1/provinces');
+      if (!response.ok) return;
+      
+      const data = await response.json();
+      const citiesData = data.data;
+      
+      for (const cityData of citiesData) {
+        try {
+          const districts = (cityData.districts || []).map(district => ({
+            name: district.name,
+            isActive: true,
+            createdAt: new Date()
+          }));
+          
+          const newCity = new Location({
+            name: cityData.name,
+            code: cityData.id.toString().padStart(2, '0'),
+            districts: districts,
+            isActive: true
+          });
+          
+          await newCity.save();
+        } catch (error) {
+          // Silently fail for individual cities
+        }
+      }
+    }
+  } catch (error) {
+    // Silently fail - cities will be loaded later if needed
+  }
+};
+
+// Initialize cities after database connection
+setTimeout(() => {
+  initializeCities().catch(console.error);
+}, 2000);
+
+// Security middleware - CSP'yi web sayfaları için gevşet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+    },
+  },
+}));
 
 // Rate limiting - Trust proxy için ayarlandı
 const limiter = rateLimit({
@@ -50,6 +110,10 @@ app.use(cors({
   origin: urlConfig.IS_DEVELOPMENT ? '*' : [
     urlConfig.FRONTEND_URL,
     urlConfig.WEB_URL,
+    'http://localhost:3000', // Vite web app (default)
+    'http://localhost:3001', // Vite web app (alternative)
+    'http://localhost:3002', // Vite web app (alternative)
+    'http://localhost:3003', // Vite web app (alternative)
     'http://localhost:8081', 
     'http://localhost:8088', 
     'http://192.168.0.27:8081', 
@@ -61,6 +125,8 @@ app.use(cors({
     'http://109.199.114.223:8081',
     'http://109.199.114.223:8088',
     'http://109.199.114.223:5001',
+    'https://halkompleksi.com', // Production web
+    'https://www.halkompleksi.com', // Production web (www)
     'exp://192.168.0.27:8081',
     'exp://192.168.1.109:8081',
     'exp://192.168.1.109:8082',
@@ -68,8 +134,19 @@ app.use(cors({
     'exp://109.199.114.223:8088'
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'Accept', 
+    'Origin', 
+    'X-Requested-With',
+    'Cache-Control',
+    'Pragma',
+    'Expires'
+  ],
+  exposedHeaders: ['Content-Length', 'Content-Type'],
+  maxAge: 86400 // 24 hours
 }));
 
 // Static dosya servisi - resimler için
@@ -95,7 +172,9 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Logging middleware
 app.use(morgan('combined'));
 
-// Routes
+// =============================================================================
+// API ROUTES - Önce API route'ları tanımla (öncelik sırası önemli!)
+// =============================================================================
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
@@ -106,12 +185,7 @@ app.use('/api/locations', locationRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/market-reports', marketReportRoutes);
 app.use('/api/categories', categoryRoutes);
-
-// Static file serving for uploads
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-app.use('/uploads/profiles', express.static(path.join(__dirname, '../uploads/profiles')));
-app.use('/uploads/products', express.static(path.join(__dirname, '../uploads/products')));
-app.use('/uploads/market-reports', express.static(path.join(__dirname, '../uploads/market-reports')));
+app.use('/api/test', testEmailRoutes); // Test endpoint (development için)
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -122,15 +196,112 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
+// Public stats endpoint for landing page
+app.get('/api/stats', async (req, res) => {
+  try {
+    // Model'leri güvenli şekilde al (zaten yüklendiyse kullan)
+    const Product = mongoose.models.Product || require('./models/Product');
+    const User = mongoose.models.User || require('./models/User');
+    const Location = mongoose.models.Location || require('./models/Location');
+    
+    // Admin dashboard ile aynı sorguları kullan
+    const [totalUsers, totalProducts, totalCities] = await Promise.all([
+      User.countDocuments(),
+      Product.countDocuments(),
+      Location.countDocuments({ isActive: true })
+    ]);
+    
+    // Onaylı ürünler
+    const approvedProducts = await Product.countDocuments({ isApproved: true });
+    
+    // Kategori sayısı
+    const categories = await Product.distinct('category');
+    const categoryCount = categories.length;
+    
+    // Gerçek sayıları göster
+    const stats = {
+      users: totalUsers,
+      products: approvedProducts,
+      cities: totalCities,
+      categories: categoryCount
+    };
+    
+    res.json(stats);
+  } catch (error) {
+    console.error('Stats error:', error.message);
+    // Fallback değerler
+    res.json({
+      users: 0,
+      products: 0,
+      cities: 81,
+      categories: 10
+    });
+  }
+});
+
+// =============================================================================
+// STATIC FILE SERVING - Resim ve dosya servisi
+// =============================================================================
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads/profiles', express.static(path.join(__dirname, '../uploads/profiles')));
+app.use('/uploads/products', express.static(path.join(__dirname, '../uploads/products')));
+app.use('/uploads/market-reports', express.static(path.join(__dirname, '../uploads/market-reports')));
+
+// =============================================================================
+// WEBSITE ROUTES - En son web sayfaları (catch-all olmaması için spesifik)
+// Not: Bu route'lar en sonda olmalı ki API route'ları ile çakışmasın
+// =============================================================================
+
+// Apple App Site Association for iOS Universal Links (API gibi davranır)
+app.get('/.well-known/apple-app-site-association', (req, res) => {
   res.json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development',
-    version: '1.0.0'
+    applinks: {
+      apps: [],
+      details: [
+        {
+          appID: 'TEAM_ID.com.halkompleksi.app',
+          paths: ['/product/*']
+        }
+      ]
+    }
   });
+});
+
+// Android assetlinks.json for App Links (API gibi davranır)
+app.get('/.well-known/assetlinks.json', (req, res) => {
+  res.json([
+    {
+      relation: ['delegate_permission/common.handle_all_urls'],
+      target: {
+        namespace: 'android_app',
+        package_name: 'com.halkompleksi.app',
+        sha256_cert_fingerprints: [
+          'YOUR_SHA256_FINGERPRINT_HERE'
+        ]
+      }
+    }
+  ]);
+});
+
+// Privacy Policy page (spesifik route - API'den önce gelmesi sorun değil)
+app.get('/privacy-policy.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/privacy-policy.html'));
+});
+
+// Terms of Service page (spesifik route)
+app.get('/terms-of-service.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/terms-of-service.html'));
+});
+
+// Web product route for universal links (spesifik route)
+// /product/:productId ile /api/products ÇAKIŞMAZ (farklı path'ler)
+app.get('/product/:productId', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/product.html'));
+});
+
+// Landing page - root route (en son, catch-all gibi)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 // Error handling middleware

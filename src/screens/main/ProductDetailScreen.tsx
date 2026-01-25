@@ -566,10 +566,15 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
     return ENV.getProductUrl(productId || '');
   }, [productId]);
 
-  // Paylaşım mesajı oluştur
+  // Ürün Deep Link oluştur
+  const getProductDeepLink = useCallback(() => {
+    return ENV.getProductDeepLink(productId || '');
+  }, [productId]);
+
+  // Paylaşım mesajı oluştur (Universal Link ile)
   const getShareMessage = useCallback(() => {
-    const url = getProductUrl();
-    return `🌿 ${product?.title || 'Ürün'}\n\n💰 Fiyat: ${product?.price || 0} ${product?.currency || '₺'}/${product?.unit || 'kg'}\n\n📦 Stok: ${product?.stock || 0} ${product?.unit || 'kg'}\n📍 Konum: ${locationString}\n\n🔗 Detaylar için: ${url}\n\n📱 Hal Kompleksi`;
+    const webUrl = getProductUrl();
+    return `🌿 ${product?.title || 'Ürün'}\n\n💰 Fiyat: ${product?.price || 0} ${product?.currency || '₺'}/${product?.unit || 'kg'}\n📦 Stok: ${product?.stock || 0} ${product?.unit || 'kg'}\n📍 Konum: ${locationString}\n\n👉 Ürünü görüntüle: ${webUrl}\n\n📱 Hal Kompleksi - Çiftçiler ve Alıcılar Buluşuyor`;
   }, [product, locationString, getProductUrl]);
 
   // Paylaşım (Native Share Sheet)
@@ -596,8 +601,13 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
     }
     
     try {
-      // Otomatik mesaj hazırla
-      const autoMessage = `Merhaba, Hal Kompleksi üzerinden "${product?.title || 'ürününüz'}" hakkında bilgi almak istiyorum.\n\nFiyat: ${product?.price || 0} ${product?.currency || '₺'}/${product?.unit || 'kg'}\nStok: ${product?.stock || 0} ${product?.unit || 'kg'}`;
+      // Konum bilgisini hazırla
+      const locString = locationString || 'Belirtilmemiş';
+      // Ürün URL'ini al
+      const webUrl = getProductUrl();
+      
+      // Otomatik mesaj hazırla (istenen formatta)
+      const autoMessage = `🌿 ${product?.title || 'Ürün'}\n\n💰 Fiyat: ${product?.price || 0} ${product?.currency || '₺'}/${product?.unit || 'kg'}\n📦 Stok: ${product?.stock || 0} ${product?.unit || 'kg'}\n📍 Konum: ${locString}\n\n👉 Ürünü görüntüle: ${webUrl}\n\n📱 Hal Kompleksi - Çiftçiler ve Alıcılar Buluşuyor`;
       const encodedMessage = encodeURIComponent(autoMessage);
       
       // Telefon numarası artık DB'de +905XXXXXXXXX formatında
@@ -643,7 +653,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
         `WhatsApp açılamadı. Lütfen WhatsApp'ın kurulu olduğundan emin olun.\n\nHata: ${err?.message || 'Bilinmeyen hata'}`
       );
     }
-  }, [product]);
+  }, [product, locationString, getProductUrl]);
 
   const handleCall = useCallback(async () => {
     if (!product?.seller?.phone) return;

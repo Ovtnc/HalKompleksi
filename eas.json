@@ -33,7 +33,7 @@
         "autoIncrement": "buildNumber"
       },
       "android": {
-        "buildType": "aab",
+        "buildType": "app-bundle",
         "gradleCommand": ":app:bundleRelease"
       }
     },
@@ -44,7 +44,7 @@
         "simulator": false
       },
       "android": {
-        "buildType": "aab",
+        "buildType": "app-bundle",
         "gradleCommand": ":app:bundleRelease"
       },
       "env": {

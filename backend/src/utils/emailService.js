@@ -90,34 +90,12 @@ const sendPasswordResetEmail = async (email, resetCode) => {
               </p>
             </div>
             
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${universalLinkUrl}" 
-                 style="background: linear-gradient(135deg, #27AE60, #2ECC71); 
-                        color: white; 
-                        padding: 15px 30px; 
-                        text-decoration: none; 
-                        border-radius: 8px; 
-                        font-weight: bold; 
-                        display: inline-block;
-                        font-size: 16px;
-                        margin-bottom: 10px;">
-                📱 Uygulamada Şifremi Sıfırla
-              </a>
-              <br>
-              <a href="${resetUrl}" 
-                 style="color: #27AE60; 
-                        text-decoration: none; 
-                        font-size: 14px;">
-                Web'de Şifremi Sıfırla
-              </a>
-            </div>
-            
             <div style="background: #F5F5F5; padding: 15px; border-radius: 8px; margin: 20px 0;">
               <p style="color: #666; font-size: 13px; margin: 0 0 8px 0; font-weight: 600;">
-                📱 Mobil Uygulama Kullanıcıları:
+                📱 Nasıl Kullanılır:
               </p>
               <p style="color: #333; font-size: 13px; margin: 0; line-height: 1.6;">
-                Yukarıdaki 4 haneli kodu mobil uygulamadaki şifre sıfırlama ekranına girin. Kod doğrulandıktan sonra yeni şifrenizi belirleyebilirsiniz.
+                Yukarıdaki 4 haneli kodu kopyalayın ve mobil uygulamadaki şifre sıfırlama ekranına yapıştırın. Kod doğrulandıktan sonra yeni şifrenizi belirleyebilirsiniz.
               </p>
             </div>
             

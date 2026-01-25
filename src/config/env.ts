@@ -2,6 +2,18 @@
 // 🌐 BASIT URL YAPISI - HER ZAMAN AYNI SERVER
 // ============================================
 
+<<<<<<< HEAD
+// 🎯 CANLI SUNUCU - DOMAIN (Natro DNS)
+// ⚠️ PRODUCTION: HTTPS ZORUNLU!
+const API_BASE_URL = 'https://halkompleksi.com/api';
+const WEB_BASE_URL = 'https://halkompleksi.com';
+const DOMAIN = 'halkompleksi.com';
+
+// ⚠️ HTTP sadece development için (App Store reddeder!)
+// Development için:
+// const API_BASE_URL = 'http://halkompleksi.com/api';
+// const WEB_BASE_URL = 'http://halkompleksi.com';
+=======
 // TypeScript global declaration for React Native's __DEV__
 declare const __DEV__: boolean;
 
@@ -25,6 +37,7 @@ const DOMAIN = __DEV__ ? 'localhost' : 'halkompleksi.com';
 // const API_BASE_URL = 'http://109.199.114.223/api';
 // const WEB_BASE_URL = 'http://109.199.114.223';
 // const DOMAIN = '109.199.114.223';
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
 
 // ============================================
 

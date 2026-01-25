@@ -34,7 +34,23 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
   const [productsLoading, setProductsLoading] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
 
+<<<<<<< HEAD
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Auto-refresh products when user profile is updated (initialized after function declaration)
+
+  const loadData = async () => {
+    await Promise.all([
+      loadProducts(),
+      loadCategories()
+    ]);
+  };
+
+=======
   // Memoize loadProducts to prevent infinite loops
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
   const loadProducts = useCallback(async () => {
     try {
       setProductsLoading(true);
@@ -62,7 +78,11 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
     } finally {
       setProductsLoading(false);
     }
+<<<<<<< HEAD
+  }, []); // Empty deps - function never changes
+=======
   }, []); // Empty dependency array - function won't change
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
 
   const loadData = useCallback(async () => {
     await Promise.all([

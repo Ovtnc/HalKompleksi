@@ -25,8 +25,11 @@ interface PersonalInfoScreenProps {
 }
 
 const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({ navigation }) => {
+<<<<<<< HEAD
+=======
   console.log('🔵 PersonalInfoScreen RENDERED!');
   
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
   const { user, updateUser, sessionExpired, clearSessionExpired, validateToken, setSessionExpired, refreshToken, clearToken, logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -302,7 +305,10 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({ navigation }) =
 
   // Apple App Store Requirement: Account deletion feature
   const handleDeleteAccount = async () => {
+<<<<<<< HEAD
+=======
     console.log('🗑️ Account deletion requested');
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
     
     Alert.alert(
       'Hesabı Sil',
@@ -311,13 +317,19 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({ navigation }) =
         {
           text: 'İptal',
           style: 'cancel',
+<<<<<<< HEAD
+=======
           onPress: () => console.log('❌ Account deletion cancelled')
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
         },
         {
           text: 'Sil',
           style: 'destructive',
           onPress: async () => {
+<<<<<<< HEAD
+=======
             console.log('⚠️ First confirmation accepted');
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
             
             // Second confirmation
             Alert.alert(
@@ -327,12 +339,24 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({ navigation }) =
                 {
                   text: 'İptal',
                   style: 'cancel',
+<<<<<<< HEAD
+=======
                   onPress: () => console.log('❌ Second confirmation cancelled')
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
                 },
                 {
                   text: 'Evet, Sil',
                   style: 'destructive',
                   onPress: async () => {
+<<<<<<< HEAD
+                    try {
+                      setDeleting(true);
+                      
+                      // Get token from AsyncStorage (where it's actually stored)
+                      const token = await AsyncStorage.getItem('authToken');
+
+                      if (!token) {
+=======
                     console.log('⚠️⚠️ Final confirmation accepted - proceeding with deletion');
                     
                     try {
@@ -350,13 +374,17 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({ navigation }) =
                         const allKeys = await AsyncStorage.getAllKeys();
                         console.log('📦 AsyncStorage keys:', allKeys);
                         
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
                         Alert.alert('Hata', 'Oturum bilgisi bulunamadı. Lütfen tekrar giriş yapın.');
                         setDeleting(false);
                         return;
                       }
 
+<<<<<<< HEAD
+=======
                       console.log('📡 Making DELETE request to:', `${ENV.API_BASE_URL}/users/account`);
 
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
                       // Delete account via API
                       const response = await fetch(`${ENV.API_BASE_URL}/users/account`, {
                         method: 'DELETE',
@@ -366,6 +394,17 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({ navigation }) =
                         },
                       });
 
+<<<<<<< HEAD
+                      const data = await response.json();
+
+                      if (response.ok) {
+                        // Clear all local data from AsyncStorage
+                        await AsyncStorage.removeItem('authToken');
+                        await AsyncStorage.removeItem('userData');
+                        
+                        // Logout user
+                        await logout();
+=======
                       console.log('📡 Response status:', response.status);
 
                       const data = await response.json();
@@ -382,6 +421,7 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({ navigation }) =
                         // Logout user
                         await logout();
                         console.log('✅ User logged out');
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
                         
                         Alert.alert(
                           'Hesap Silindi',
@@ -393,11 +433,18 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({ navigation }) =
                         Alert.alert('Hata', data.message || 'Hesap silinirken bir hata oluştu');
                       }
                     } catch (error: any) {
+<<<<<<< HEAD
+                      console.error('Delete account error:', error);
+                      Alert.alert('Hata', 'Hesap silinirken bir hata oluştu. Lütfen tekrar deneyin.');
+                    } finally {
+                      setDeleting(false);
+=======
                       console.error('❌ Delete account error:', error);
                       Alert.alert('Hata', `Hesap silinirken bir hata oluştu: ${error.message || 'Bilinmeyen hata'}`);
                     } finally {
                       setDeleting(false);
                       console.log('🔄 Deletion process finished');
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
                     }
                   },
                 },
@@ -572,6 +619,16 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({ navigation }) =
 
         {/* Danger Zone - Account Deletion */}
         <View style={styles.dangerZone}>
+<<<<<<< HEAD
+          <Text style={styles.dangerZoneTitle}>⚠️ Tehlikeli Alan</Text>
+          <Text style={styles.dangerZoneDescription}>
+            Hesabınızı silmek istiyorsanız, aşağıdaki butona tıklayın. Bu işlem geri alınamaz.
+          </Text>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={handleDeleteAccount}
+            disabled={deleting || isEditing}
+=======
           <Text style={styles.dangerZoneTitle}>⚠️ Tehlikeli Alan (Test Version)</Text>
           <Text style={styles.dangerZoneDescription}>
             Hesabınızı silmek istiyorsanız, aşağıdaki butona tıklayın. Bu işlem geri alınamaz.
@@ -587,6 +644,7 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({ navigation }) =
               handleDeleteAccount();
             }}
             disabled={false}
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
             activeOpacity={0.7}
           >
             {deleting ? (
@@ -594,7 +652,11 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({ navigation }) =
             ) : (
               <>
                 <Ionicons name="trash-outline" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+<<<<<<< HEAD
+                <Text style={styles.deleteButtonText}>Hesabı Kalıcı Olarak Sil</Text>
+=======
                 <Text style={styles.deleteButtonText}>HESABI SİL (TEST)</Text>
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
               </>
             )}
           </TouchableOpacity>

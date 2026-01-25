@@ -24,9 +24,13 @@
       "backgroundColor": "#FFFFFF"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.halkompleksi.app",
+<<<<<<< HEAD
+      "buildNumber": "2",
+=======
       "buildNumber": "8",
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
       "appStoreUrl": "https://apps.apple.com/app/hal-kompleksi/id",
       "deploymentTarget": "12.0",
       "requireFullScreen": false,
@@ -52,12 +56,15 @@
         "UISupportedInterfaceOrientations": [
           "UIInterfaceOrientationPortrait"
         ],
+<<<<<<< HEAD
+=======
         "UISupportedInterfaceOrientations~ipad": [
           "UIInterfaceOrientationPortrait",
           "UIInterfaceOrientationPortraitUpsideDown",
           "UIInterfaceOrientationLandscapeLeft",
           "UIInterfaceOrientationLandscapeRight"
         ],
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
         "LSApplicationQueriesSchemes": [
           "whatsapp",
           "whatsapp-api"

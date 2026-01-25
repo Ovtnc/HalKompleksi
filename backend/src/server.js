@@ -23,6 +23,10 @@ const categoryRoutes = require('./routes/categories');
 const testEmailRoutes = require('./routes/testEmail');
 
 const app = express();
+
+// Trust proxy - Nginx reverse proxy için gerekli
+app.set('trust proxy', true);
+
 const PORT = urlConfig.PORT;
 
 // Trust proxy - Nginx reverse proxy için gerekli
@@ -89,11 +93,15 @@ app.use(helmet({
   },
 }));
 
-// Rate limiting - Development için daha gevşek ayarlar
+// Rate limiting - Trust proxy için ayarlandı
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 1000, // limit each IP to 1000 requests per minute (development)
-  message: 'Too many requests from this IP, please try again later.'
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Trust proxy ile çalış
+  skip: (req) => false,
 });
 app.use('/api/', limiter);
 

@@ -324,6 +324,17 @@ const AddProductScreen = ({ navigation }: any) => {
 
   const loadCities = async () => {
     try {
+<<<<<<< HEAD
+      const response = await locationsAPI.getCities();
+      
+      // Handle different response formats (same fix as ProductsScreen)
+      const citiesArray = Array.isArray(response) 
+        ? response  // Direct array from backend
+        : (response?.cities || []);  // Wrapped in cities property
+      
+      console.log('🏙️ AddProduct: Cities loaded:', citiesArray.length);
+      setCities(citiesArray);
+=======
       setLoadingCities(true);
       console.log('📡 Loading cities from:', `${ENV.API_BASE_URL}/locations/cities`);
       
@@ -345,6 +356,7 @@ const AddProductScreen = ({ navigation }: any) => {
       } else {
         setCities(normalized);
       }
+>>>>>>> 9e02814e53691981bfcd19308c1f91b4a1a8de05
     } catch (error) {
       console.error('❌ Error loading cities:', error);
       // Use fallback cities from helper

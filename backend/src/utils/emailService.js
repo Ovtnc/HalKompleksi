@@ -125,10 +125,7 @@ const sendPasswordResetEmail = async (email, resetCode) => {
               <strong>Güvenlik Uyarısı:</strong> Eğer şifre sıfırlama talebinde bulunmadıysanız, bu e-postayı görmezden gelebilirsiniz. Kodunuzu kimseyle paylaşmayın.
             </p>
             
-            <p style="color: #999; font-size: 12px; line-height: 1.6; margin-top: 15px;">
-              Eğer buton çalışmıyorsa, aşağıdaki bağlantıyı tarayıcınıza kopyalayın:<br>
-              <a href="${resetUrl}" style="color: #27AE60; word-break: break-all; font-size: 11px;">${resetUrl}</a>
-            </p>
+          
           </div>
           
           <div style="background: #2E7D32; padding: 20px; text-align: center;">

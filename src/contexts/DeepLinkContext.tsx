@@ -26,8 +26,22 @@ export const DeepLinkProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       console.log('🔗 Deep link received:', event.url);
       
       const url = event.url;
-      const productMatch = url.match(/\/product\/([^/?]+)/);
       
+      // Reset password deep link: halkompleksi://reset-password?code=1234
+      // or https://halkompleksi.com/reset-password?code=1234
+      const resetPasswordMatch = url.match(/reset-password[?&]code=(\d{4})/);
+      if (resetPasswordMatch && resetPasswordMatch[1]) {
+        const code = resetPasswordMatch[1];
+        console.log('🔗 Setting pending navigation to reset password with code:', code);
+        setPendingNavigation({
+          screen: 'ResetPassword',
+          params: { code }
+        });
+        return;
+      }
+      
+      // Product deep link
+      const productMatch = url.match(/\/product\/([^/?]+)/);
       if (productMatch && productMatch[1]) {
         const productId = productMatch[1];
         console.log('🔗 Setting pending navigation to product:', productId);

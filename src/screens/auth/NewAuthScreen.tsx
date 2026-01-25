@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,8 +15,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { authAPI } from '../../services/api';
+import { useDeepLink } from '../../contexts/DeepLinkContext';
 
-const NewAuthScreen = () => {
+const NewAuthScreen = ({ navigationParams }: { navigationParams?: { code?: string } }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -48,6 +49,7 @@ const NewAuthScreen = () => {
   });
 
   const { login, register, loadRememberedCredentials } = useAuth();
+  const { pendingNavigation, clearPendingNavigation } = useDeepLink();
 
   // Load remembered credentials on component mount
   React.useEffect(() => {
@@ -61,6 +63,24 @@ const NewAuthScreen = () => {
       }
     });
   }, []);
+
+  // Handle deep link for reset password with code
+  useEffect(() => {
+    if (pendingNavigation && pendingNavigation.screen === 'ResetPassword' && pendingNavigation.params?.code) {
+      const code = pendingNavigation.params.code;
+      
+      // Otomatik olarak şifre sıfırlama akışını başlat
+      setIsLogin(true);
+      setShowForgotPassword(true);
+      setEmailSent(true); // Email gönderilmiş gibi göster
+      setResetCodeInput(code); // Kodu otomatik yapıştır
+      
+      // Kodu otomatik doğrula (opsiyonel - kullanıcı manuel de doğrulayabilir)
+      // handleVerifyCode(); // Bu satırı kaldırabiliriz, kullanıcı butona bassın
+      
+      clearPendingNavigation();
+    }
+  }, [pendingNavigation, clearPendingNavigation]);
 
   const handleLogin = async () => {
     if (!loginData.email || !loginData.password) {

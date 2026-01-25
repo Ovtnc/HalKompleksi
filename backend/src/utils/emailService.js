@@ -47,7 +47,11 @@ const sendPasswordResetEmail = async (email, resetCode) => {
       return { success: false, error: 'Email servisi yapılandırılmamış' };
     }
     
-    // Web uygulaması için reset URL (kod parametresi ile)
+    // Deep link URL (mobil uygulama için)
+    const deepLinkUrl = `halkompleksi://reset-password?code=${resetCode}`;
+    // Universal link (iOS/Android için)
+    const universalLinkUrl = `https://halkompleksi.com/reset-password?code=${resetCode}`;
+    // Web uygulaması için reset URL (fallback)
     const resetUrl = `${FRONTEND_URL}/reset-password?code=${resetCode}`;
     
     const mailOptions = {
@@ -87,7 +91,7 @@ const sendPasswordResetEmail = async (email, resetCode) => {
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetUrl}" 
+              <a href="${universalLinkUrl}" 
                  style="background: linear-gradient(135deg, #27AE60, #2ECC71); 
                         color: white; 
                         padding: 15px 30px; 
@@ -95,7 +99,15 @@ const sendPasswordResetEmail = async (email, resetCode) => {
                         border-radius: 8px; 
                         font-weight: bold; 
                         display: inline-block;
-                        font-size: 16px;">
+                        font-size: 16px;
+                        margin-bottom: 10px;">
+                📱 Uygulamada Şifremi Sıfırla
+              </a>
+              <br>
+              <a href="${resetUrl}" 
+                 style="color: #27AE60; 
+                        text-decoration: none; 
+                        font-size: 14px;">
                 Web'de Şifremi Sıfırla
               </a>
             </div>
